@@ -1,131 +1,183 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { RequestsHeader } from '@/components/requests/RequestsHeader';
+import { SearchBar } from '@/components/requests/SearchBar';
+import { RequestsFilters } from '@/components/requests/RequestsFilters';
+import { Table } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, FileSearch } from 'lucide-react';
 
-// Placeholder enums – replace with actual values from your schema.
-const statusOptions = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
-const priorityOptions = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+// Mock request data – replace with real API later
+interface Request {
+  id: string;
+  title: string;
+  customerName: string;
+  customerEmail: string;
+  category: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+  status: 'Pending' | 'In Progress' | 'AI Processing' | 'Resolved' | 'Closed';
+  assignedAgent?: string;
+  createdAt: string;
+}
+
+const mockRequests: Request[] = [
+  {
+    id: '1',
+    title: 'Cannot login to portal',
+    customerName: 'Alice Johnson',
+    customerEmail: 'alice@example.com',
+    category: 'Support',
+    priority: 'High',
+    status: 'Pending',
+    assignedAgent: 'Bob',
+    createdAt: '2024-11-02T09:15:00Z',
+  },
+  {
+    id: '2',
+    title: 'Feature request: Dark mode',
+    customerName: 'Bob Smith',
+    customerEmail: 'bob@example.com',
+    category: 'Feature',
+    priority: 'Medium',
+    status: 'In Progress',
+    assignedAgent: 'Charlie',
+    createdAt: '2024-11-01T14:30:00Z',
+  },
+  {
+    id: '3',
+    title: 'Payment processing error',
+    customerName: 'Charlie Lee',
+    customerEmail: 'charlie@example.com',
+    category: 'Bug',
+    priority: 'Urgent',
+    status: 'AI Processing',
+    assignedAgent: undefined,
+    createdAt: '2024-10-28T08:45:00Z',
+  },
+];
 
 export default function RequestsPage() {
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [priorityFilter, setPriorityFilter] = useState<string>('');
+  const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState({ status: '', priority: '', category: '', agent: '' });
   const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<Request[]>([]);
 
-  // TODO: replace with real data fetching (e.g., SWR, TanStack Query).
-  // For now we simulate a loading state.
-  React.useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200);
+  // Simulate data fetching
+    useEffect(() => {
+    // Load persisted requests from localStorage if available
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("requests");
+      if (stored) {
+        setData(JSON.parse(stored));
+        setLoading(false);
+        return;
+      }
+    }
+    // Fallback to mock data
+    const timer = setTimeout(() => {
+      setData(mockRequests);
+      setLoading(false);
+    }, 1200);
     return () => clearTimeout(timer);
   }, []);
 
-  // Placeholder rows – in production fetch from API.
-  const rows = [
-    { id: '1', subject: 'Billing Issue', status: 'OPEN', priority: 'HIGH' },
-    { id: '2', subject: 'Login Bug', status: 'IN_PROGRESS', priority: 'MEDIUM' },
-    { id: '3', subject: 'Feature Request', status: 'RESOLVED', priority: 'LOW' },
-  ].filter((r) =>
-    (statusFilter ? r.status === statusFilter : true) &&
-    (priorityFilter ? r.priority === priorityFilter : true)
-  );
+  const filtered = data.filter((r) => {
+    const matchesQuery =
+      r.title.toLowerCase().includes(query.toLowerCase()) ||
+      r.customerEmail.toLowerCase().includes(query.toLowerCase()) ||
+      r.category.toLowerCase().includes(query.toLowerCase());
+    const matchesStatus = !filters.status || r.status === filters.status;
+    const matchesPriority = !filters.priority || r.priority === filters.priority;
+    const matchesCategory = !filters.category || r.category === filters.category;
+    const matchesAgent = !filters.agent || r.assignedAgent === filters.agent;
+    return matchesQuery && matchesStatus && matchesPriority && matchesCategory && matchesAgent;
+  });
+
+  const columns = [
+    { header: 'Title', accessor: 'title' },
+    {
+      header: 'Customer',
+      accessor: (row: Request) => (
+        <div>
+          <p className="text-sm font-medium text-gray-800">{row.customerName}</p>
+          <p className="text-xs text-gray-600">{row.customerEmail}</p>
+        </div>
+      ),
+    },
+    { header: 'Category', accessor: 'category' },
+    {
+      header: 'Priority',
+      accessor: (row: Request) => (
+        <Badge
+          variant="default"
+          className={
+            row.priority === 'Low'
+              ? 'bg-green-100 text-green-800'
+              : row.priority === 'Medium'
+              ? 'bg-yellow-100 text-yellow-800'
+              : row.priority === 'High'
+              ? 'bg-orange-100 text-orange-800'
+              : 'bg-red-100 text-red-800'
+          }
+        >
+          {row.priority}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Status',
+      accessor: (row: Request) => (
+        <Badge
+          variant="default"
+          className={
+            row.status === 'Pending'
+              ? 'bg-gray-100 text-gray-800'
+              : row.status === 'In Progress'
+              ? 'bg-blue-100 text-blue-800'
+              : row.status === 'AI Processing'
+              ? 'bg-purple-100 text-purple-800'
+              : row.status === 'Resolved'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }
+        >
+          {row.status}
+        </Badge>
+      ),
+    },
+    { header: 'Agent', accessor: (row: Request) => row.assignedAgent ?? '—' },
+    {
+      header: 'Created',
+      accessor: (row: Request) => new Date(row.createdAt).toLocaleDateString(),
+    },
+  ];
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">All Requests</h1>
-          <button
-            onClick={() => router.back()}
-            className="btn btn-secondary btn-sm"
-          >
-            Back to Dashboard
-          </button>
-        </header>
-
-        {/* Filters */}
-        <section className="flex flex-wrap gap-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="input-field w-48"
-          >
-            <option value="">All Statuses</option>
-            {statusOptions.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            className="input-field w-48"
-          >
-            <option value="">All Priorities</option>
-            {priorityOptions.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </section>
-
-        {/* Table */}
-        <section className="overflow-x-auto">
-          <table className="min-w-full bg-white rounded-xl shadow-sm overflow-hidden">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Subject</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Status</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Priority</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                // Loading skeleton rows
-                Array.from({ length: 3 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded w-3/4" /></td>
-                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded w-1/2" /></td>
-                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded w-1/3" /></td>
-                    <td className="px-4 py-2"><div className="h-4 bg-gray-200 rounded w-1/4" /></td>
-                  </tr>
-                ))
-              ) : (
-                rows.map((row) => (
-                  <tr key={row.id} className="border-t">
-                    <td className="px-4 py-2 text-sm text-gray-800">{row.subject}</td>
-                    <td className="px-4 py-2 text-sm text-gray-800">{row.status}</td>
-                    <td className="px-4 py-2 text-sm text-gray-800">{row.priority}</td>
-                    <td className="px-4 py-2">
-                      <Link
-                        href={`/dashboard/requests/${row.id}`}
-                        className="text-indigo-600 hover:underline"
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </section>
-
-        {/* Pagination placeholder */}
-        <nav className="flex justify-center space-x-2 mt-4">
-          <button className="btn btn-secondary btn-sm disabled:opacity-50" disabled>
-            Prev
-          </button>
-          <span className="text-sm text-gray-600">Page 1 of 1</span>
-          <button className="btn btn-secondary btn-sm" disabled>
-            Next
-          </button>
-        </nav>
+    <section className="max-w-7xl mx-auto p-4">
+      <RequestsHeader onCreate={() => router.push('/dashboard/requests/create')} />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+        <SearchBar query={query} onChange={setQuery} />
       </div>
-    </main>
+      <RequestsFilters filters={filters} setFilters={setFilters} />
+
+      {loading ? (
+        <Table columns={columns} data={[]} loading={true} />
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12 flex flex-col items-center">
+          <FileSearch className="w-16 h-16 text-gray-400 mb-4" />
+          <p className="text-lg text-gray-600 mb-4">No requests yet. Start by adding a new one.</p>
+          <Button onClick={() => router.push('/dashboard/requests/create')} variant="primary" className="flex items-center gap-2">
+            <PlusCircle className="w-4 h-4" />
+            Create Request
+          </Button>
+        </div>
+      ) : (
+        <Table columns={columns} data={filtered} />
+      )}
+    </section>
   );
 }

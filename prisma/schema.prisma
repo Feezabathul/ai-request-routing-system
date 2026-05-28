@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  AGENT
+  MANAGER
+  ADMIN
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum RequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RequestChannel {
+  EMAIL
+  CHAT
+  WEB_FORM
+  API
+}
+
+enum AIProcessingStatus {
+  PENDING
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ClassificationLabel {
+  BILLING
+  TECHNICAL
+  ACCOUNT
+  FEATURE_REQUEST
+  GENERAL
+}
+
+enum RequestEventType {
+  REQUEST_CREATED
+  REQUEST_UPDATED
+  ASSIGNED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  NOTE_ADDED
+  AI_CLASSIFICATION_QUEUED
+  AI_CLASSIFIED
+  AI_CLASSIFICATION_FAILED
+}
+
+model User {
+  id               String            @id @default(uuid()) @db.Uuid
+  email            String            @unique
+  name             String
+  passwordHash     String
+  role             UserRole          @default(AGENT)
+  createdRequests  CustomerRequest[] @relation("RequestCreatedBy")
+  assignedRequests CustomerRequest[] @relation("RequestAssignedTo")
+  authoredNotes    InternalNote[]
+  requestEvents    RequestEvent[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([role])
+}
+
+model CustomerRequest {
+  id                 String             @id @default(uuid()) @db.Uuid
+  customerName       String
+  customerEmail      String
+  subject            String
+  message            String
+  status             RequestStatus      @default(OPEN)
+  priority           RequestPriority    @default(MEDIUM)
+  channel            RequestChannel     @default(WEB_FORM)
+  aiProcessingStatus AIProcessingStatus @default(PENDING)
+  retryCount         Int                @default(0)
+  createdById        String             @db.Uuid
+  assignedToId       String?            @db.Uuid
+  createdBy          User               @relation("RequestCreatedBy", fields: [createdById], references: [id])
+  assignedTo         User?              @relation("RequestAssignedTo", fields: [assignedToId], references: [id])
+  aiClassifications  AIClassification[]
+  internalNotes      InternalNote[]
+  requestEvents      RequestEvent[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([status, priority])
+  @@index([aiProcessingStatus, retryCount])
+  @@index([assignedToId, status])
+  @@index([createdAt])
+}
+
+model AIClassification {
+  id               String             @id @default(uuid()) @db.Uuid
+  requestId        String             @db.Uuid
+  label            ClassificationLabel
+  confidence       Decimal            @db.Decimal(5, 4)
+  reasoning        String?
+  modelVersion     String
+  rawResponse      Json?
+  processingStatus AIProcessingStatus @default(COMPLETED)
+  createdAt        DateTime           @default(now())
+  request          CustomerRequest    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+  @@index([label])
+  @@index([processingStatus])
+}
+
+model InternalNote {
+  id         String          @id @default(uuid()) @db.Uuid
+  requestId  String          @db.Uuid
+  authorId   String          @db.Uuid
+  content    String
+  isInternal Boolean         @default(true)
+  request    CustomerRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author     User            @relation(fields: [authorId], references: [id])
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@index([requestId, createdAt])
+  @@index([authorId])
+}
+
+model RequestEvent {
+  id          String           @id @default(uuid()) @db.Uuid
+  requestId   String           @db.Uuid
+  actorId     String?          @db.Uuid
+  eventType   RequestEventType
+  description String?
+  metadata    Json?
+  request     CustomerRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actor       User?            @relation(fields: [actorId], references: [id])
+  createdAt   DateTime         @default(now())
+
+  @@index([requestId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([actorId])
+}

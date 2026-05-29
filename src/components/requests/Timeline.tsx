@@ -14,6 +14,21 @@ export interface TimelineEvent {
  * Each event shows a type badge, timestamp and optional metadata.
  */
 export const Timeline: React.FC<{ events: TimelineEvent[] }> = ({ events }) => {
+  const renderMessage = (event: TimelineEvent) => {
+    switch (event.type) {
+      case 'REQUEST_CREATED':
+        return 'Request created';
+      case 'AI_CLASSIFIED':
+        return `AI classified request as ${event.metadata?.classification ?? ''} with ${event.metadata?.confidence ?? ''}% confidence`;
+      case 'STATUS_CHANGED':
+        return `Status changed from ${event.metadata?.from ?? ''} to ${event.metadata?.to ?? ''}`;
+      case 'NOTE_ADDED':
+        return `Note added`;
+      default:
+        return event.type.replace('_', ' ');
+    }
+  };
+
   return (
     <Card className="bg-white bg-opacity-10 backdrop-blur-sm border border-white/20 p-4 space-y-4">
       <h3 className="mb-2 text-lg font-medium text-white">Timeline</h3>
@@ -24,12 +39,8 @@ export const Timeline: React.FC<{ events: TimelineEvent[] }> = ({ events }) => {
               {e.type.replace('_', ' ')}
             </Badge>
             <div className="text-sm text-gray-300">
-              <p>{new Date(e.createdAt).toLocaleString()}</p>
-              {e.metadata && (
-                <pre className="mt-1 rounded bg-gray-800 p-1 text-xs text-gray-100 overflow-x-auto">
-                  {JSON.stringify(e.metadata, null, 2)}
-                </pre>
-              )}
+              <p>{renderMessage(e)}</p>
+              <p className="text-xs text-gray-500">{new Date(e.createdAt).toLocaleString()}</p>
             </div>
           </li>
         ))}

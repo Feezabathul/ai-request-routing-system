@@ -8,6 +8,7 @@ import { RequestsFilters } from '@/components/requests/RequestsFilters';
 import { Table } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { PlusCircle, FileSearch } from 'lucide-react';
 
 // Mock request data – replace with real API later
@@ -67,7 +68,7 @@ export default function RequestsPage() {
   const [data, setData] = useState<Request[]>([]);
 
   // Simulate data fetching
-    useEffect(() => {
+  useEffect(() => {
     // Load persisted requests from localStorage if available
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("requests");
@@ -98,7 +99,14 @@ export default function RequestsPage() {
   });
 
   const columns = [
-    { header: 'Title', accessor: 'title' },
+    {
+      header: 'Title',
+      accessor: (row: Request) => (
+        <Link href={`/dashboard/requests/${row.id}`} className="text-indigo-600 hover:underline">
+          {row.title}
+        </Link>
+      ),
+    },
     {
       header: 'Customer',
       accessor: (row: Request) => (
@@ -155,7 +163,6 @@ export default function RequestsPage() {
       accessor: (row: Request) => new Date(row.createdAt).toLocaleDateString(),
     },
   ];
-
   return (
     <section className="max-w-7xl mx-auto p-4">
       <RequestsHeader onCreate={() => router.push('/dashboard/requests/create')} />
@@ -180,4 +187,5 @@ export default function RequestsPage() {
       )}
     </section>
   );
+
 }

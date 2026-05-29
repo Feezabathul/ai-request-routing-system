@@ -6,7 +6,7 @@ import {
   RequestStatus,
   type CustomerRequest,
   type RequestEvent,
-} from "@/generated/prisma";
+} from "@/generated/prisma/client";
 
 export type CreateCustomerRequestData = {
   customerName: string;

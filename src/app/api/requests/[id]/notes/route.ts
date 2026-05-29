@@ -1,5 +1,6 @@
 // src/app/api/requests/[id]/notes/route.ts
 
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createNoteController } from "@/controllers/note.controller";
 
@@ -12,8 +13,10 @@ import { createNoteController } from "@/controllers/note.controller";
  * custom header `x-user-id`. In a real production setup you would replace this
  * with your auth middleware that injects the user ID.
  */
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
+
     // Simple auth extraction (replace with proper auth in production)
     const authorId = request.headers.get("x-user-id");
     if (!authorId) {
@@ -25,7 +28,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     const note = await createNoteController({
       request,
-      requestId: params.id,
+      requestId: id,
       authorId,
     });
 

@@ -5,6 +5,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { setUserRole } from '@/lib/role';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,10 +20,18 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    // Simulated async login – replace with real API later
-    await new Promise((res) => setTimeout(res, 1500));
+
+    // Decide role for the demo login flow.
+    const normalizedEmail = email.trim().toLowerCase();
+    const isAdmin = normalizedEmail === 'admin@gmail.com' && password === 'admin123';
+    const role = isAdmin ? 'ADMIN' : 'CUSTOMER';
+
+    setUserRole(role);
+
+    await new Promise((res) => setTimeout(res, 800));
     setLoading(false);
-    router.push("/dashboard");
+
+    router.push(isAdmin ? '/dashboard/admin' : '/dashboard');
   };
 
   return (

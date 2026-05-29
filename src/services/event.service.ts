@@ -1,7 +1,7 @@
 // src/services/event.service.ts
 
 import { prisma } from "../lib/prisma";
-import { RequestEventType } from "@prisma/client";
+import { RequestEventType } from "@/generated/prisma/client";
 
 /**
  * Generic payload type for event metadata. Allows any JSON‑serialisable data.

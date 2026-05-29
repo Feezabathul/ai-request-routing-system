@@ -52,7 +52,7 @@ export function useRealtime(
 
     // Subscribe to the channel.
     channel.subscribe((status) => {
-      if (status === 'SUBSCRIPTION_ERROR') {
+      if (status === ('SUBSCRIPTION_ERROR' as unknown as typeof status)) {
         console.error(`Realtime subscription error on channel ${channelName}`);
       }
     });

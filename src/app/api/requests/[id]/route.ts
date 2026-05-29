@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { RequestEventType, RequestPriority } from "@/generated/prisma";
+import { RequestEventType, RequestPriority } from "@/generated/prisma/client";
 import {
   assignAgentToRequestController,
   getRequestByIdController,

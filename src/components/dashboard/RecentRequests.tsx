@@ -11,7 +11,7 @@ interface Request {
 }
 
 // Columns with badge rendering for status and priority
-const columns = [
+const columns: Array<{ header: string; accessor: keyof Request | ((row: Request) => React.ReactNode); className?: string }> = [
   { header: 'Title', accessor: 'title' },
   {
     header: 'Status',
@@ -58,9 +58,9 @@ const data: Request[] = [
   { title: 'Feature request: Dark mode', status: 'Resolved', priority: 'Low', agent: 'Bob', created: '2024-10-28' },
 ];
 
-export const RecentRequests: React.FC = () => {
+export const RecentRequests: React.FC<{ className?: string }> = ({ className }) => {
   return (
-    <section className="space-y-4">
+    <section className={`space-y-4 ${className ?? ''}`}>
       <h2 className="text-xl font-semibold text-gray-800">Recent Requests</h2>
       <Table columns={columns} data={data} loading={false} />
     </section>

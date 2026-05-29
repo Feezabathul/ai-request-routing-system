@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -17,9 +17,7 @@ import {
   Zap,
   LogOut,
 } from 'lucide-react';
-
-/** Role type for frontend-only role placeholder support */
-export type UserRole = 'ADMIN' | 'AGENT' | 'CUSTOMER';
+import { getUserRole, UserRole } from '@/lib/role';
 
 interface NavItem {
   name: string;
@@ -47,7 +45,7 @@ const navGroups: NavGroup[] = [
       { name: 'Admin Overview', href: '/dashboard/admin', icon: <ShieldCheck className="h-4 w-4" />, adminOnly: true },
       { name: 'Agents', href: '/dashboard/agents', icon: <Bot className="h-4 w-4" />, adminOnly: true },
       { name: 'Users', href: '/dashboard/users', icon: <Users className="h-4 w-4" />, adminOnly: true },
-      { name: 'Settings', href: '/dashboard/settings', icon: <Settings className="h-4 w-4" /> },
+      { name: 'Settings', href: '/dashboard/settings', icon: <Settings className="h-4 w-4" />, adminOnly: true },
     ],
   },
 ];
@@ -57,10 +55,19 @@ const navGroups: NavGroup[] = [
  * Responsive with mobile hamburger menu, grouped nav items,
  * active route highlighting, and role-based visibility.
  */
-export const Sidebar: React.FC<{ role?: UserRole }> = ({ role = 'ADMIN' }) => {
+export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
   const pathname = usePathname();
+  const [storedRole, setStoredRole] = useState<UserRole>('CUSTOMER');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!role) {
+      setStoredRole(getUserRole());
+    }
+  }, [role]);
+
+  const effectiveRole = role ?? storedRole;
 
   const toggleGroup = (label: string) => {
     setCollapsedGroups((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -74,7 +81,7 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role = 'ADMIN' }) => {
   const filteredGroups = navGroups.map((group) => ({
     ...group,
     items: group.items.filter((item) => {
-      if (item.adminOnly && role !== 'ADMIN') return false;
+      if (item.adminOnly && effectiveRole !== 'ADMIN') return false;
       return true;
     }),
   })).filter((group) => group.items.length > 0);
@@ -145,11 +152,15 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role = 'ADMIN' }) => {
       <div className="border-t border-gray-800 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-            A
+            {effectiveRole === 'ADMIN' ? 'A' : 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-200 truncate">Admin User</p>
-            <p className="text-xs text-gray-500 truncate">admin@airouter.io</p>
+            <p className="text-sm font-medium text-gray-200 truncate">
+              {effectiveRole === 'ADMIN' ? 'Administrator' : 'Customer User'}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {effectiveRole === 'ADMIN' ? 'admin@gmail.com' : 'customer@example.com'}
+            </p>
           </div>
           <button className="p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors">
             <LogOut className="h-4 w-4" />

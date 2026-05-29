@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { RequestPriority, RequestStatus } from "@/generated/prisma";
+import { RequestPriority, RequestStatus } from "@/generated/prisma/client";
 import { createRequestController, getAllRequestsController } from "@/controllers/request.controller";
 
 type JsonSuccess<T> = { success: true; data: T };

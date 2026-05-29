@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { AIProcessingStatus, RequestPriority, RequestStatus } from "@/generated/prisma";
+import { AIProcessingStatus, RequestPriority, RequestStatus } from "@/generated/prisma/client";
 
 export const createRequestSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title is too long"),

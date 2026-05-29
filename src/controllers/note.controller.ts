@@ -1,6 +1,6 @@
 // src/controllers/note.controller.ts
 
-import { Request } from "express"; // for type only; not used at runtime in Next.js
+import type { NextRequest } from "next/server";
 import { addNote } from "@/services/note.service";
 import { createNoteSchema } from "@/validations/note.schema";
 import { z } from "zod";
@@ -14,7 +14,7 @@ import { z } from "zod";
  * @returns the created note record.
  */
 export async function createNoteController(params: {
-  request: Request;
+  request: NextRequest;
   requestId: string;
   authorId: string;
 }) {

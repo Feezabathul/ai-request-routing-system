@@ -35,7 +35,7 @@ export const Timeline: React.FC<{ events: TimelineEvent[] }> = ({ events }) => {
       <ul className="space-y-3">
         {events.map((e) => (
           <li key={e.id} className="flex items-start space-x-3">
-            <Badge variant="status" className="flex-shrink-0 mt-0.5">
+            <Badge variant="secondary" className="flex-shrink-0 mt-0.5">
               {e.type.replace('_', ' ')}
             </Badge>
             <div className="text-sm text-gray-300">

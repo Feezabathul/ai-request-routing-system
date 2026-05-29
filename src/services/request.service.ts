@@ -3,7 +3,7 @@ import {
   RequestEventType,
   RequestStatus,
   type CustomerRequest,
-} from "@/generated/prisma";
+} from "@/generated/prisma/client";
 import { requestRepository } from "@/repositories/request.repository";
 import {
   DEFAULT_AI_PROCESSING_STATUS,

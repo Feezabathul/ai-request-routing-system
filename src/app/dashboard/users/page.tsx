@@ -17,6 +17,7 @@ import {
   Calendar,
   UserPlus,
 } from 'lucide-react';
+import { AdminPageGuard } from '@/components/dashboard/AdminPageGuard';
 
 /* ── Types & Mock Data ─────────────────────────────────────── */
 
@@ -37,15 +38,15 @@ interface User {
 
 const mockUsers: User[] = [
   { id: '1', name: 'Admin User', email: 'admin@airouter.io', avatar: 'AU', role: 'ADMIN', status: 'active', createdDate: '2024-06-15', lastActive: '2 min ago', requestsCount: 0 },
-  { id: '2', name: 'Sarah Johnson', email: 'sarah@airouter.io', avatar: 'SJ', role: 'AGENT', status: 'active', createdDate: '2025-01-15', lastActive: '5 min ago', requestsCount: 145 },
-  { id: '3', name: 'Mike Chen', email: 'mike@airouter.io', avatar: 'MC', role: 'AGENT', status: 'active', createdDate: '2025-02-20', lastActive: '12 min ago', requestsCount: 98 },
+  { id: '2', name: 'Agent One', email: 'agent1@airouter.io', avatar: 'A1', role: 'AGENT', status: 'active', createdDate: '2025-01-15', lastActive: '5 min ago', requestsCount: 145 },
+  { id: '3', name: 'Agent Two', email: 'agent2@airouter.io', avatar: 'A2', role: 'AGENT', status: 'active', createdDate: '2025-02-20', lastActive: '12 min ago', requestsCount: 98 },
   { id: '4', name: 'John Smith', email: 'john@example.com', avatar: 'JS', role: 'CUSTOMER', status: 'active', createdDate: '2025-03-10', lastActive: '1 hour ago', requestsCount: 23 },
   { id: '5', name: 'Emily Brown', email: 'emily@example.com', avatar: 'EB', role: 'CUSTOMER', status: 'active', createdDate: '2025-04-02', lastActive: '3 hours ago', requestsCount: 15 },
   { id: '6', name: 'David Wilson', email: 'david@example.com', avatar: 'DW', role: 'CUSTOMER', status: 'inactive', createdDate: '2025-01-28', lastActive: '2 days ago', requestsCount: 7 },
-  { id: '7', name: 'Lisa Patel', email: 'lisa@airouter.io', avatar: 'LP', role: 'AGENT', status: 'active', createdDate: '2024-11-10', lastActive: '20 min ago', requestsCount: 210 },
+  { id: '7', name: 'Agent Three', email: 'agent3@airouter.io', avatar: 'A3', role: 'AGENT', status: 'active', createdDate: '2024-11-10', lastActive: '20 min ago', requestsCount: 210 },
   { id: '8', name: 'Robert Garcia', email: 'robert@example.com', avatar: 'RG', role: 'CUSTOMER', status: 'suspended', createdDate: '2025-02-14', lastActive: '5 days ago', requestsCount: 3 },
   { id: '9', name: 'Anna Taylor', email: 'anna@example.com', avatar: 'AT', role: 'CUSTOMER', status: 'active', createdDate: '2025-05-01', lastActive: '30 min ago', requestsCount: 12 },
-  { id: '10', name: 'James Wilson', email: 'james@airouter.io', avatar: 'JW', role: 'AGENT', status: 'active', createdDate: '2024-09-05', lastActive: '8 min ago', requestsCount: 178 },
+  { id: '10', name: 'Agent Four', email: 'agent4@airouter.io', avatar: 'A4', role: 'AGENT', status: 'active', createdDate: '2024-09-05', lastActive: '8 min ago', requestsCount: 178 },
 ];
 
 /* ── Config ────────────────────────────────────────────────── */
@@ -96,7 +97,8 @@ export default function UsersPage() {
   const customerCount = mockUsers.filter((u) => u.role === 'CUSTOMER').length;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <AdminPageGuard>
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -314,5 +316,6 @@ export default function UsersPage() {
         </div>
       </div>
     </div>
+    </AdminPageGuard>
   );
 }

@@ -29,13 +29,13 @@ export const RequestInfo: React.FC<RequestInfoProps> = ({ request }) => {
         </div>
         <div>
           <p className="text-sm text-gray-300">Status</p>
-          <Badge variant="status" className="mt-1">
+          <Badge variant="secondary" className="mt-1">
             {request.status}
           </Badge>
         </div>
         <div>
           <p className="text-sm text-gray-300">Priority</p>
-          <Badge variant="priority" className="mt-1">
+          <Badge variant="default" className="mt-1">
             {request.priority}
           </Badge>
         </div>

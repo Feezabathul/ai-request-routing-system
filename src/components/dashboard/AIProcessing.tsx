@@ -10,7 +10,7 @@ interface ProcessingItem {
   status: 'processing' | 'completed' | 'failed';
 }
 
-export const AIProcessing: React.FC = () => {
+export const AIProcessing: React.FC<{ className?: string }> = ({ className }) => {
   const mock: ProcessingItem[] = [
     { id: '1', title: 'Ticket #12345', confidence: 87, status: 'processing' },
     { id: '2', title: 'Ticket #12346', confidence: 92, status: 'processing' },
@@ -31,7 +31,7 @@ export const AIProcessing: React.FC = () => {
   };
 
   return (
-    <section className="space-y-4">
+    <section className={`space-y-4 ${className ?? ''}`}>
       <h2 className="text-xl font-semibold text-gray-800">AI Processing</h2>
       <Card className="p-4 space-y-3 bg-white bg-opacity-10 backdrop-blur-xl">
         {mock.map((item) => (

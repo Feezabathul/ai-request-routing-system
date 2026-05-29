@@ -47,7 +47,7 @@ export const AiClassification: React.FC<ClassificationProps> = ({ classification
       <div className="grid grid-cols-2 gap-2">
         <div>
           <p className="text-sm text-gray-300">Category</p>
-          <Badge variant="status" className="mt-1">
+          <Badge variant="secondary" className="mt-1">
             {predictedCategory}
           </Badge>
         </div>
@@ -57,7 +57,7 @@ export const AiClassification: React.FC<ClassificationProps> = ({ classification
         </div>
         <div>
           <p className="text-sm text-gray-300">Suggested Priority</p>
-          <Badge variant="priority" className="mt-1">
+          <Badge variant="default" className="mt-1">
             {suggestedPriority}
           </Badge>
         </div>

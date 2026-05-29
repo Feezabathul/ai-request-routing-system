@@ -98,7 +98,7 @@ export default function RequestsPage() {
     return matchesQuery && matchesStatus && matchesPriority && matchesCategory && matchesAgent;
   });
 
-  const columns = [
+  const columns: Array<{ header: string; accessor: keyof Request | ((row: Request) => React.ReactNode); className?: string }> = [
     {
       header: 'Title',
       accessor: (row: Request) => (

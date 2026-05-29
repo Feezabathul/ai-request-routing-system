@@ -2,9 +2,9 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusIcon, ListBulletIcon, Squares2X2Icon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
-export const QuickActions: React.FC = () => {
+export const QuickActions: React.FC<{ className?: string }> = ({ className }) => {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className={`grid grid-cols-2 gap-4 ${className ?? ''}`}>
       <Button variant="primary" className="flex items-center justify-center space-x-2">
         <PlusIcon className="h-5 w-5" />
         <span>Create Request</span>

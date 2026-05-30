@@ -57,17 +57,25 @@ const navGroups: NavGroup[] = [
  */
 export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
   const pathname = usePathname();
-  const [storedRole, setStoredRole] = useState<UserRole>('CUSTOMER');
+  const [mounted, setMounted] = useState(false);
+  const [storedRole, setStoredRole] = useState<UserRole | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!role) {
-      setStoredRole(getUserRole());
-    }
+    const loadRoleTimer = window.setTimeout(() => {
+      setStoredRole(role ?? getUserRole());
+      setMounted(true);
+    }, 0);
+
+    return () => window.clearTimeout(loadRoleTimer);
   }, [role]);
 
-  const effectiveRole = role ?? storedRole;
+  if (!mounted || !storedRole) {
+    return null;
+  }
+
+  const effectiveRole = storedRole;
 
   const toggleGroup = (label: string) => {
     setCollapsedGroups((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -156,10 +164,10 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-200 truncate">
-              {effectiveRole === 'ADMIN' ? 'Administrator' : 'Customer User'}
+              {effectiveRole === 'ADMIN' ? 'Administrator' : 'Customer'}
             </p>
             <p className="text-xs text-gray-500 truncate">
-              {effectiveRole === 'ADMIN' ? 'admin@gmail.com' : 'customer@example.com'}
+              {effectiveRole}
             </p>
           </div>
           <button className="p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors">

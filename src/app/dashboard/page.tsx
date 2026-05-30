@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
   return (
     <section className="flex-1 p-6 overflow-y-auto">
-      <WelcomeSection userName="Demo User" role="Admin" />
+      <WelcomeSection userName="User" role="Admin" />
       <StatGrid stats={stats} className="my-6" />
       <RealtimeIndicator />
       <AIProcessing className="my-6" />

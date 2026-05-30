@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import {
-  Settings,
   User,
   Bell,
   Sparkles,
@@ -149,8 +148,8 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Admin User</p>
-                  <p className="text-xs text-gray-500">admin@airouter.io</p>
+                  <p className="text-sm font-medium text-gray-900">Account Profile</p>
+                  <p className="text-xs text-gray-500">Current administrator account</p>
                   <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1">Change Avatar</button>
                 </div>
               </div>
@@ -159,23 +158,23 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                  <input type="text" defaultValue="Admin" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
+                  <input type="text" placeholder="First name" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                  <input type="text" defaultValue="User" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
+                  <input type="text" placeholder="Last name" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <span className="flex items-center gap-1.5"><Mail className="h-3 w-3 text-gray-400" /> Email</span>
                   </label>
-                  <input type="email" defaultValue="admin@airouter.io" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
+                  <input type="email" placeholder="Email address" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <span className="flex items-center gap-1.5"><Phone className="h-3 w-3 text-gray-400" /> Phone</span>
                   </label>
-                  <input type="tel" defaultValue="+1 (555) 123-4567" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
+                  <input type="tel" placeholder="Phone number" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -191,7 +190,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                  <textarea rows={3} defaultValue="System administrator for AI Request Routing System." className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 resize-none" />
+                  <textarea rows={3} placeholder="Profile bio" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 resize-none" />
                 </div>
               </div>
             </div>

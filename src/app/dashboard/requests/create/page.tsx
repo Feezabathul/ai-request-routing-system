@@ -86,7 +86,7 @@ export default function CreateRequestPage() {
             <Input
               id="customerName"
               name="customerName"
-              placeholder="John Doe"
+              placeholder="Customer name"
               value={form.customerName}
               onChange={handleChange}
               required

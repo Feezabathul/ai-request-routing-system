@@ -175,7 +175,7 @@ export default function RegisterPage() {
               id="name"
               type="text"
               required
-              placeholder="John Doe"
+              placeholder="Full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={loading}

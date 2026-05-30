@@ -11,7 +11,10 @@ export interface StoredRequest {
   customerName: string;
   customerEmail: string;
   description?: string;
+  /** Legacy / display — mirrors aiCategory when set by AI */
   category: string;
+  aiCategory?: Department;
+  aiConfidence?: number;
   priority: RequestPriority;
   status: RequestStatus;
   assignedAgent?: string;

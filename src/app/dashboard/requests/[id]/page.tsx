@@ -8,10 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { RequestHeader } from '@/components/request-details/RequestHeader';
 import { RequestInfo } from '@/components/request-details/RequestInfo';
 import { Timeline, TimelineEvent } from '@/components/requests/Timeline';
-import { PlusCircle, Shield, UserCheck } from 'lucide-react';
+import { PlusCircle, Shield, UserCheck, Sparkles } from 'lucide-react';
 import { getUserRole, UserRole } from '@/lib/role';
 import { getActiveAgentsByDepartment } from '@/lib/agents';
-import { inferDepartmentFromRequest, type Department } from '@/lib/departments';
+import { getRequestDepartment, type Department } from '@/lib/departments';
 import {
   assignAgentToRequest,
   getRequestById,
@@ -166,8 +166,11 @@ export default function RequestDetailPage() {
   };
 
   const requestDepartment: Department = request
-    ? inferDepartmentFromRequest(request)
+    ? getRequestDepartment(request)
     : 'General Support';
+
+  const aiCategory = request?.aiCategory ?? requestDepartment;
+  const aiConfidence = request?.aiConfidence;
 
   const matchingAgents = getActiveAgentsByDepartment(requestDepartment);
 
@@ -216,8 +219,14 @@ export default function RequestDetailPage() {
 
   const timelineEvents: TimelineEvent[] = [
     { id: '1', type: 'REQUEST_CREATED', createdAt: request.createdAt },
+    {
+      id: '2',
+      type: 'AI_CLASSIFIED',
+      createdAt: request.createdAt,
+      metadata: { classification: aiCategory, confidence: aiConfidence },
+    },
     ...(request.assignedAt
-      ? [{ id: '2', type: 'ASSIGNED_CHANGED' as const, createdAt: request.assignedAt }]
+      ? [{ id: '3', type: 'ASSIGNED_CHANGED' as const, createdAt: request.assignedAt }]
       : []),
   ];
 
@@ -239,27 +248,43 @@ export default function RequestDetailPage() {
         <RequestInfo
           request={{
             description: request.description,
-            category: request.category,
-            assignedAgent: assignedName,
+            category: aiCategory,
+            assignedAgent: assignedName ?? 'Not Assigned',
             assignedAgentDepartment: request.assignedAgentDepartment,
             assignedAt: request.assignedAt,
+            workflowStatus: request.status,
           }}
         />
 
-        <Card className="border border-gray-200 bg-white p-5">
-          <h3 className="mb-3 text-base font-semibold text-gray-900">Request Classification</h3>
+        <Card className="border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-semibold text-gray-900">AI Classification</h3>
+          </div>
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-gray-500">Category</span>
-              <Badge className="bg-indigo-100 text-indigo-800">{request.category}</Badge>
+              <span className="text-gray-600">Category</span>
+              <Badge className="bg-indigo-100 text-indigo-800">{aiCategory}</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-500">Required Department</span>
-              <Badge className="bg-blue-100 text-blue-800">{requestDepartment}</Badge>
+              <span className="text-gray-600">Confidence</span>
+              <span className="font-semibold text-gray-900">
+                {aiConfidence != null ? `${aiConfidence}%` : '—'}
+              </span>
             </div>
-            <p className="text-xs text-gray-400">
-              Agents are filtered by department when assigning.
-            </p>
+            <div className="flex items-center justify-between border-t border-indigo-100 pt-3">
+              <span className="text-gray-600">Assigned Agent</span>
+              <span className="font-medium text-gray-900">
+                {assignedName ?? 'Not Assigned'}
+              </span>
+            </div>
+            {role === 'ADMIN' && (
+              <p className="text-xs text-gray-500">
+                Assign Agent shows only agents in {aiCategory}.
+              </p>
+            )}
           </div>
         </Card>
       </div>
@@ -299,12 +324,12 @@ export default function RequestDetailPage() {
         {role === 'ADMIN' && showAssignment && (
           <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
             <p className="mb-3 text-sm text-gray-600">
-              Showing agents in <strong>{requestDepartment}</strong> only
+              AI category: <strong>{aiCategory}</strong> — showing matching agents only
             </p>
 
             {matchingAgents.length === 0 ? (
               <p className="text-sm text-amber-700">
-                No agents available in {requestDepartment} department
+                No agents available in {aiCategory} department
               </p>
             ) : (
               <div className="flex flex-col gap-3 sm:flex-row">

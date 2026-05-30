@@ -19,6 +19,8 @@ interface Request {
   customerName: string;
   customerEmail: string;
   category: string;
+  aiCategory?: string;
+  aiConfidence?: number;
   priority: 'Low' | 'Medium' | 'High' | 'Urgent';
   status: 'Pending' | 'In Progress' | 'AI Processing' | 'Resolved' | 'Closed';
   assignedAgent?: string;
@@ -102,7 +104,17 @@ export default function RequestsPage() {
         </div>
       ),
     },
-    { header: 'Category', accessor: 'category' },
+    {
+      header: 'AI Category',
+      accessor: (row: Request) => (
+        <div>
+          <span className="text-sm text-gray-800">{row.aiCategory ?? row.category}</span>
+          {row.aiConfidence != null && (
+            <span className="ml-1 text-xs text-gray-500">({row.aiConfidence}%)</span>
+          )}
+        </div>
+      ),
+    },
     {
       header: 'Priority',
       accessor: (row: Request) => (

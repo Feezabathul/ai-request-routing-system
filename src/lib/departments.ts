@@ -8,18 +8,27 @@ export const DEPARTMENTS = [
 export type Department = (typeof DEPARTMENTS)[number];
 
 export interface RequestLike {
-  category: string;
+  category?: string;
+  aiCategory?: Department;
   title?: string;
   description?: string;
 }
 
+/** Department used for agent assignment — prefers AI classification. */
+export function getRequestDepartment(request: RequestLike): Department {
+  if (request.aiCategory && DEPARTMENTS.includes(request.aiCategory)) {
+    return request.aiCategory;
+  }
+  return inferDepartmentFromRequest(request);
+}
+
 /** Map request category / AI classification text to a support department. */
 export function inferDepartmentFromRequest(request: RequestLike): Department {
-  if (DEPARTMENTS.includes(request.category as Department)) {
+  if (request.category && DEPARTMENTS.includes(request.category as Department)) {
     return request.category as Department;
   }
 
-  const text = `${request.category} ${request.title ?? ''} ${request.description ?? ''}`.toLowerCase();
+  const text = `${request.category ?? ''} ${request.title ?? ''} ${request.description ?? ''}`.toLowerCase();
 
   if (/(payment|billing|invoice|refund|charge|paid|failed payment|subscription)/.test(text)) {
     return 'Billing';

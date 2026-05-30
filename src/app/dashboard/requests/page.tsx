@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PlusCircle, FileSearch } from 'lucide-react';
 
-// Mock request data – replace with real API later
 interface Request {
   id: string;
   title: string;
@@ -24,42 +23,6 @@ interface Request {
   createdAt: string;
 }
 
-const mockRequests: Request[] = [
-  {
-    id: '1',
-    title: 'Cannot login to portal',
-    customerName: 'Alice Johnson',
-    customerEmail: 'alice@example.com',
-    category: 'Support',
-    priority: 'High',
-    status: 'Pending',
-    assignedAgent: 'Bob',
-    createdAt: '2024-11-02T09:15:00Z',
-  },
-  {
-    id: '2',
-    title: 'Feature request: Dark mode',
-    customerName: 'Bob Smith',
-    customerEmail: 'bob@example.com',
-    category: 'Feature',
-    priority: 'Medium',
-    status: 'In Progress',
-    assignedAgent: 'Charlie',
-    createdAt: '2024-11-01T14:30:00Z',
-  },
-  {
-    id: '3',
-    title: 'Payment processing error',
-    customerName: 'Charlie Lee',
-    customerEmail: 'charlie@example.com',
-    category: 'Bug',
-    priority: 'Urgent',
-    status: 'AI Processing',
-    assignedAgent: undefined,
-    createdAt: '2024-10-28T08:45:00Z',
-  },
-];
-
 export default function RequestsPage() {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -67,23 +30,21 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Request[]>([]);
 
-  // Simulate data fetching
+  // Load requests from localStorage
   useEffect(() => {
-    // Load persisted requests from localStorage if available
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("requests");
-      if (stored) {
-        setData(JSON.parse(stored));
-        setLoading(false);
-        return;
+    const loadRequests = () => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("requests");
+        setData(stored ? JSON.parse(stored) : []);
       }
-    }
-    // Fallback to mock data
-    const timer = setTimeout(() => {
-      setData(mockRequests);
       setLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
+    };
+
+    loadRequests();
+    
+    // Listen for storage changes from other tabs/windows
+    window.addEventListener('storage', loadRequests);
+    return () => window.removeEventListener('storage', loadRequests);
   }, []);
 
   const filtered = data.filter((r) => {
@@ -176,7 +137,7 @@ export default function RequestsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 flex flex-col items-center">
           <FileSearch className="w-16 h-16 text-gray-400 mb-4" />
-          <p className="text-lg text-gray-600 mb-4">No requests yet. Start by adding a new one.</p>
+          <p className="text-lg text-gray-600 mb-4">No requests found</p>
           <Button onClick={() => router.push('/dashboard/requests/create')} variant="primary" className="flex items-center gap-2">
             <PlusCircle className="w-4 h-4" />
             Create Request

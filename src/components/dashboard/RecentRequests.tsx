@@ -1,64 +1,112 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { FileSearch } from 'lucide-react';
 
 interface Request {
+  id: string;
   title: string;
-  status: 'Open' | 'In Progress' | 'Resolved';
-  priority: 'High' | 'Medium' | 'Low';
-  agent: string;
-  created: string;
+  customerName?: string;
+  customerEmail?: string;
+  status: 'Pending' | 'In Progress' | 'Resolved' | 'Closed' | 'Open';
+  priority: 'High' | 'Medium' | 'Low' | 'Urgent';
+  assignedAgent?: string;
+  createdAt: string;
+  [key: string]: any;
 }
 
-// Columns with badge rendering for status and priority
-const columns: Array<{ header: string; accessor: keyof Request | ((row: Request) => React.ReactNode); className?: string }> = [
-  { header: 'Title', accessor: 'title' },
-  {
-    header: 'Status',
-    accessor: (row: Request) => (
-      <Badge
-        variant="default"
-        className={
-          row.status === 'Open'
-            ? 'bg-green-100 text-green-800'
-            : row.status === 'In Progress'
-            ? 'bg-yellow-100 text-yellow-800'
-            : 'bg-gray-100 text-gray-800'
-        }
-      >
-        {row.status}
-      </Badge>
-    ),
-  },
-  {
-    header: 'Priority',
-    accessor: (row: Request) => (
-      <Badge
-        variant="default"
-        className={
-          row.priority === 'High'
-            ? 'bg-red-100 text-red-800'
-            : row.priority === 'Medium'
-            ? 'bg-yellow-100 text-yellow-800'
-            : 'bg-gray-100 text-gray-800'
-        }
-      >
-        {row.priority}
-      </Badge>
-    ),
-  },
-  { header: 'Agent', accessor: 'agent' },
-  { header: 'Created', accessor: 'created' },
-];
-
-// Placeholder data – to be replaced by real API
-const data: Request[] = [
-  { title: 'Unable to login', status: 'Open', priority: 'High', agent: '—', created: '2024-11-02' },
-  { title: 'Payment processing error', status: 'In Progress', priority: 'Medium', agent: 'Alice', created: '2024-11-01' },
-  { title: 'Feature request: Dark mode', status: 'Resolved', priority: 'Low', agent: 'Bob', created: '2024-10-28' },
-];
-
 export const RecentRequests: React.FC<{ className?: string }> = ({ className }) => {
+  const [data, setData] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadRequests = () => {
+      if (typeof window === 'undefined') return;
+      
+      const stored = localStorage.getItem('requests');
+      const requests: Request[] = stored ? JSON.parse(stored) : [];
+      
+      // Show only the 5 most recent requests
+      const sorted = requests
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5);
+      
+      setData(sorted);
+      setLoading(false);
+    };
+
+    loadRequests();
+    
+    // Listen for storage changes
+    window.addEventListener('storage', loadRequests);
+    return () => window.removeEventListener('storage', loadRequests);
+  }, []);
+
+  const columns: Array<{ header: string; accessor: keyof Request | ((row: Request) => React.ReactNode); className?: string }> = [
+    { header: 'Title', accessor: 'title' },
+    {
+      header: 'Status',
+      accessor: (row: Request) => (
+        <Badge
+          variant="default"
+          className={
+            row.status === 'Pending'
+              ? 'bg-gray-100 text-gray-800'
+              : row.status === 'In Progress'
+              ? 'bg-blue-100 text-blue-800'
+              : row.status === 'Resolved'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-gray-100 text-gray-800'
+          }
+        >
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Priority',
+      accessor: (row: Request) => (
+        <Badge
+          variant="default"
+          className={
+            row.priority === 'Urgent'
+              ? 'bg-red-100 text-red-800'
+              : row.priority === 'High'
+              ? 'bg-orange-100 text-orange-800'
+              : row.priority === 'Medium'
+              ? 'bg-yellow-100 text-yellow-800'
+              : 'bg-green-100 text-green-800'
+          }
+        >
+          {row.priority}
+        </Badge>
+      ),
+    },
+    { header: 'Agent', accessor: (row: Request) => row.assignedAgent ?? '—' },
+    { header: 'Created', accessor: (row: Request) => new Date(row.createdAt).toLocaleDateString() },
+  ];
+
+  if (loading) {
+    return (
+      <section className={`space-y-4 ${className ?? ''}`}>
+        <h2 className="text-xl font-semibold text-gray-800">Recent Requests</h2>
+        <Table columns={columns} data={[]} loading={true} />
+      </section>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <section className={`space-y-4 ${className ?? ''}`}>
+        <h2 className="text-xl font-semibold text-gray-800">Recent Requests</h2>
+        <div className="text-center py-8 flex flex-col items-center">
+          <FileSearch className="w-12 h-12 text-gray-400 mb-3" />
+          <p className="text-gray-600">No requests created yet</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className={`space-y-4 ${className ?? ''}`}>
       <h2 className="text-xl font-semibold text-gray-800">Recent Requests</h2>

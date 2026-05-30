@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { setUserRole } from '@/lib/role';
+import { AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,21 +22,66 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // Decide role for the demo login flow.
     const normalizedEmail = email.trim().toLowerCase();
-    const isAdmin = normalizedEmail === 'admin@gmail.com' && password === 'admin123';
-    const role = isAdmin ? 'ADMIN' : 'CUSTOMER';
+    let role = '';
+    let routePath = '';
 
-    setUserRole(role);
+    try {
+      // 1. Check admin credentials
+      if (normalizedEmail === 'admin@gmail.com' && password === 'admin123') {
+        role = 'ADMIN';
+        routePath = '/dashboard/admin';
+      } else {
+        // 2. Check agents from localStorage
+        const storedAgents = localStorage.getItem('agents');
+        if (storedAgents) {
+          const agents: any[] = JSON.parse(storedAgents);
+          const agent = agents.find(
+            (a) => a.email === normalizedEmail && a.password === password
+          );
+          if (agent) {
+            role = 'AGENT';
+            routePath = '/dashboard';
+          }
+        }
 
-    await new Promise((res) => setTimeout(res, 800));
-    setLoading(false);
+        // 3. If not agent, check registered users
+        if (!role) {
+          const storedUsers = localStorage.getItem('users');
+          if (storedUsers) {
+            const users: any[] = JSON.parse(storedUsers);
+            const user = users.find(
+              (u) => u.email === normalizedEmail && u.password === password
+            );
+            if (user) {
+              role = 'CUSTOMER';
+              routePath = '/dashboard';
+            }
+          }
+        }
+      }
 
-    router.push(isAdmin ? '/dashboard/admin' : '/dashboard');
+      // If no matching account found
+      if (!role) {
+        setError('Invalid email or password. Please check your credentials or register if you don\'t have an account.');
+        setLoading(false);
+        return;
+      }
+
+      // Set role and navigate
+      setUserRole(role);
+      await new Promise((res) => setTimeout(res, 800));
+      setLoading(false);
+      router.push(routePath);
+    } catch (e) {
+      console.error('Login error:', e);
+      setError('An error occurred during login. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
-    <section className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
+    <section className="min-h-screen flex flex-col lg:flex-row bg-linear-to-br from-indigo-100 via-purple-50 to-pink-100">
       {/* Left side – info panel */}
       <div className="hidden lg:flex flex-1 flex-col justify-center items-start p-12 bg-white bg-opacity-20 backdrop-blur-lg">
         <h1 className="text-4xl font-extrabold text-gray-800 mb-4 tracking-tight">
@@ -75,11 +121,12 @@ export default function LoginPage() {
           
             <h2 className="text-2xl font-medium text-gray-800 mb-6 text-center">Welcome back</h2>
 
-          {error && (
-            <div className="mb-4 text-sm text-red-600" role="alert">
-              {error}
-            </div>
-          )}
+            {error && (
+              <div className="mb-6 flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg" role="alert">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-800">{error}</p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-8" autoComplete="off">
             <div>
@@ -94,7 +141,8 @@ export default function LoginPage() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 bg-white bg-opacity-70 backdrop-blur-sm px-5 py-3 text-base text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                disabled={loading}
+                className="w-full rounded-xl border border-gray-300 bg-white bg-opacity-70 backdrop-blur-sm px-5 py-3 text-base text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors disabled:opacity-50"
               />
             </div>
 
@@ -110,12 +158,14 @@ export default function LoginPage() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 bg-white bg-opacity-70 backdrop-blur-sm px-5 py-3 text-base text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                disabled={loading}
+                className="w-full rounded-xl border border-gray-300 bg-white bg-opacity-70 backdrop-blur-sm px-5 py-3 text-base text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute inset-y-0 right-3 flex items-center text-sm text-gray-600 hover:text-gray-800 focus:outline-none"
+                disabled={loading}
+                className="absolute inset-y-0 right-3 flex items-center text-sm text-gray-600 hover:text-gray-800 focus:outline-none disabled:opacity-50"
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
@@ -127,7 +177,8 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  disabled={loading}
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
                 />
                 <span className="text-sm text-gray-700">Remember me</span>
               </label>

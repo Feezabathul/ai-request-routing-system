@@ -3,6 +3,8 @@ import { Table } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { FileSearch } from 'lucide-react';
 import { getUserRole } from '@/lib/role';
+import { getCurrentUser, filterRequestsForRole } from '@/lib/current-user';
+import { getCurrentAgent } from '@/lib/agents';
 
 interface Request {
   id: string;
@@ -17,10 +19,6 @@ interface Request {
   createdAt: string;
 }
 
-interface CurrentAgent {
-  id: string;
-}
-
 export const RecentRequests: React.FC<{ className?: string }> = ({ className }) => {
   const [data, setData] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,12 +29,14 @@ export const RecentRequests: React.FC<{ className?: string }> = ({ className }) 
       
       const stored = localStorage.getItem('requests');
       const storedRequests: Request[] = stored ? JSON.parse(stored) : [];
-      const currentAgent: CurrentAgent | null = localStorage.getItem('currentAgent')
-        ? JSON.parse(localStorage.getItem('currentAgent') || 'null')
-        : null;
-      const requests = getUserRole() === 'AGENT' && currentAgent
-        ? storedRequests.filter((request) => request.assignedAgentId === currentAgent.id)
-        : storedRequests;
+      const role = getUserRole();
+      const currentUser = getCurrentUser();
+      const currentAgent = getCurrentAgent();
+      const requests = filterRequestsForRole(storedRequests, role, {
+        agentId: currentAgent?.id,
+        userId: currentUser?.id,
+        userEmail: currentUser?.email,
+      });
       
       // Show only the 5 most recent requests
       const sorted = requests

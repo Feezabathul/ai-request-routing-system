@@ -121,6 +121,115 @@ export class RequestRepository {
       },
     });
   }
+
+  async getDashboardStats() {
+    try {
+      const [totalRequests, newRequests, inProgressRequests, resolvedRequests, activeAssignedCounts] =
+        await Promise.all([
+          prisma.customerRequest.count(),
+          prisma.customerRequest.count({
+            where: {
+              assignedToId: null,
+              status: { notIn: [RequestStatus.RESOLVED, RequestStatus.CLOSED] },
+            },
+          }),
+          prisma.customerRequest.count({
+            where: {
+              assignedToId: { not: null },
+              status: { in: [RequestStatus.OPEN, RequestStatus.IN_PROGRESS] },
+            },
+          }),
+          prisma.customerRequest.count({
+            where: { status: { in: [RequestStatus.RESOLVED, RequestStatus.CLOSED] } },
+          }),
+          prisma.customerRequest.groupBy({
+            by: ['assignedToId'],
+            where: {
+              assignedToId: { not: null },
+              status: { notIn: [RequestStatus.RESOLVED, RequestStatus.CLOSED] },
+            },
+            _count: { assignedToId: true },
+          }),
+        ]);
+
+      // Log counts for debugging/verification
+      console.log('[dashboard] totalRequests=', totalRequests);
+      console.log('[dashboard] newRequests=', newRequests);
+      console.log('[dashboard] inProgressRequests=', inProgressRequests);
+      console.log('[dashboard] resolvedRequests=', resolvedRequests);
+
+      const agentIds = activeAssignedCounts.map((row) => row.assignedToId).filter(
+        (id): id is string => id !== null,
+      );
+
+      const agentNames =
+        agentIds.length > 0
+          ? await prisma.user.findMany({
+              where: { id: { in: agentIds } },
+              select: { id: true, name: true },
+            })
+          : [];
+
+      const agentWorkload = activeAssignedCounts
+        .map((row) => ({
+          agentId: row.assignedToId as string,
+          name: agentNames.find((agent) => agent.id === row.assignedToId)?.name ?? 'Agent',
+          activeAssignedRequests: row._count.assignedToId,
+        }))
+        .sort((a, b) => b.activeAssignedRequests - a.activeAssignedRequests);
+
+      return {
+        totalRequests,
+        newRequests,
+        inProgressRequests,
+        resolvedRequests,
+        agentWorkload,
+      };
+    } catch (err) {
+      console.error('[dashboard] Failed to compute stats:', err);
+      // Return safe zeros so the dashboard can still render in dev environments.
+      return {
+        totalRequests: 0,
+        newRequests: 0,
+        inProgressRequests: 0,
+        resolvedRequests: 0,
+        agentWorkload: [],
+      };
+    }
+  }
+
+  async getUnassignedRequests(limit = 50) {
+    return prisma.customerRequest.findMany({
+      where: { assignedToId: null },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        aiClassifications: { orderBy: { createdAt: 'desc' }, take: 1 },
+        createdBy: true,
+      },
+    });
+  }
+
+  async getRequestNotificationStats() {
+    const [total, newWaiting, assigned, resolved] = await Promise.all([
+      prisma.customerRequest.count(),
+      prisma.customerRequest.count({
+        where: {
+          assignedToId: null,
+          status: { notIn: [RequestStatus.RESOLVED, RequestStatus.CLOSED] },
+        },
+      }),
+      prisma.customerRequest.count({
+        where: {
+          assignedToId: { not: null },
+          status: { not: RequestStatus.RESOLVED },
+        },
+      }),
+      prisma.customerRequest.count({ where: { status: RequestStatus.RESOLVED } }),
+    ]);
+
+    return { total, newWaiting, assigned, resolved };
+  }
 }
 
 export const requestRepository = new RequestRepository();

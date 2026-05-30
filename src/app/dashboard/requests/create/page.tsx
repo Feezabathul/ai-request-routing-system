@@ -1,31 +1,29 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { classifyRequestWithAI } from "@/lib/ai-classification";
 import { getRequests, saveRequests, type StoredRequest } from "@/lib/request-storage";
-import { getUserRole } from "@/lib/role";
+import { getCurrentUser } from "@/lib/current-user";
 
 export default function CreateRequestPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [classifying, setClassifying] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    customerName: "",
-    customerEmail: "",
-  });
+  const [form, setForm] = useState({ title: "", description: "" });
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [aiPreview, setAiPreview] = useState<{ category: string; confidence: number } | null>(null);
+  const [currentUserLabel, setCurrentUserLabel] = useState<string | null>(null);
 
-  const [isCustomer, setIsCustomer] = useState(false);
-
-  useEffect(() => {
-    setIsCustomer(getUserRole() === "CUSTOMER");
+  React.useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUserLabel(`${user.name} (${user.email})`);
+    }
   }, []);
 
   const handleChange = (
@@ -34,13 +32,22 @@ export default function CreateRequestPage() {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     setAiPreview(null);
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setMessage(null);
+
+    const currentUser = getCurrentUser();
+    if (!currentUser?.id || !currentUser.email) {
+      setError("You must be logged in to submit a request. Please log in again.");
+      return;
+    }
+
     setLoading(true);
     setClassifying(true);
-    setMessage(null);
 
     const { aiCategory, aiConfidence } = classifyRequestWithAI(
       form.title.trim(),
@@ -49,18 +56,14 @@ export default function CreateRequestPage() {
 
     setClassifying(false);
 
-    const customerName =
-      form.customerName.trim() ||
-      (isCustomer ? "Customer" : "Guest User");
-    const customerEmail =
-      form.customerEmail.trim() ||
-      (isCustomer ? "customer@example.com" : "guest@example.com");
-
     const newRequest: StoredRequest = {
       id: Date.now().toString(),
       title: form.title.trim(),
-      customerName,
-      customerEmail,
+      createdById: currentUser.id,
+      createdByName: currentUser.name,
+      createdByEmail: currentUser.email,
+      customerName: currentUser.name,
+      customerEmail: currentUser.email,
       description: form.description.trim(),
       category: aiCategory,
       aiCategory,
@@ -78,7 +81,7 @@ export default function CreateRequestPage() {
     saveRequests(requests);
 
     setMessage(
-      `Request submitted. AI classified as ${aiCategory} (${aiConfidence}% confidence). An admin will assign an agent.`
+      `Request submitted as ${currentUser.name}. AI classified: ${aiCategory} (${aiConfidence}% confidence).`
     );
 
     setTimeout(() => {
@@ -102,10 +105,21 @@ export default function CreateRequestPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Submit a Request</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Describe your issue. Our AI will categorize it automatically — no need to
-          pick a department.
+          Describe your issue. Your account details are attached automatically.
         </p>
+        {currentUserLabel && (
+          <p className="mt-2 text-sm text-gray-600">
+            Submitting as <strong>{currentUserLabel}</strong>
+          </p>
+        )}
       </div>
+
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-red-800">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
 
       {message && (
         <div className="flex items-start gap-2 rounded-lg bg-green-50 p-3 text-green-800">
@@ -144,39 +158,6 @@ export default function CreateRequestPage() {
             required
           />
         </div>
-
-        {!isCustomer && (
-          <div className="grid grid-cols-1 gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 md:grid-cols-2">
-            <p className="text-xs text-gray-500 md:col-span-2">
-              Optional — for admin-created tickets on behalf of a customer
-            </p>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700" htmlFor="customerName">
-                Customer Name
-              </label>
-              <Input
-                id="customerName"
-                name="customerName"
-                placeholder="Customer name"
-                value={form.customerName}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700" htmlFor="customerEmail">
-                Customer Email
-              </label>
-              <Input
-                id="customerEmail"
-                name="customerEmail"
-                type="email"
-                placeholder="email@example.com"
-                value={form.customerEmail}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-        )}
 
         {aiPreview && (
           <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm">

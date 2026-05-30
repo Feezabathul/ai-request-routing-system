@@ -8,7 +8,12 @@ export type RequestPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 export interface StoredRequest {
   id: string;
   title: string;
+  createdById: string;
+  createdByName: string;
+  createdByEmail: string;
+  /** @deprecated Use createdByName — kept for older saved requests */
   customerName: string;
+  /** @deprecated Use createdByEmail */
   customerEmail: string;
   description?: string;
   /** Legacy / display — mirrors aiCategory when set by AI */
@@ -39,6 +44,9 @@ export function getRequests(): StoredRequest[] {
 
 export function saveRequests(requests: StoredRequest[]): void {
   localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(requests));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('admin-notifications-updated'));
+  }
 }
 
 export function getRequestById(id: string): StoredRequest | null {

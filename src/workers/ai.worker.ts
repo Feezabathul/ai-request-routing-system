@@ -3,9 +3,9 @@ import { Worker, Job } from "bullmq";
 import { prisma } from "../lib/prisma";
 import { aiClassificationQueue } from "../services/queue.service";
 import { classifyCustomerRequest } from "../services/ai/classification.service";
-import { QueueName } from "../constants/queues";
-import { Redis } from "ioredis";
-import { Redis as RedisConnection } from "../lib/redis"; // singleton instance
+import { broadcastAdminNotificationsUpdated } from "@/services/realtime.service";
+import { QUEUE_NAMES } from "../constants/queues";
+import { getRedisClient } from "../lib/redis";
 
 // Types for job data
 export interface AIClassificationJobData {
@@ -24,7 +24,7 @@ async function updateRequestStatus(requestId: string, status: "PROCESSING" | "CO
 
 // Main worker
 const aiWorker = new Worker<AIClassificationJobData>(
-  QueueName.AI_CLASSIFICATION_QUEUE,
+  QUEUE_NAMES.AI_CLASSIFICATION_QUEUE,
   async (job: Job<AIClassificationJobData>) => {
     const { requestId, title, description } = job.data;
 
@@ -39,10 +39,11 @@ const aiWorker = new Worker<AIClassificationJobData>(
       await prisma.aIClassification.create({
         data: {
           requestId,
-          predictedCategory: result.predictedCategory,
-          confidenceScore: result.confidenceScore,
-          suggestedPriority: result.suggestedPriority,
-          processingTimeMs: result.processingTimeMs,
+          label: result.predictedCategory.toUpperCase() as any,
+          confidence: result.confidenceScore,
+          reasoning: null,
+          modelVersion: 'mock-v1',
+          rawResponse: result as unknown as object,
         },
       });
 
@@ -50,12 +51,16 @@ const aiWorker = new Worker<AIClassificationJobData>(
       if (result.suggestedPriority) {
         await prisma.customerRequest.update({
           where: { id: requestId },
-          data: { priority: result.suggestedPriority },
+          data: { priority: result.suggestedPriority as any },
         });
       }
 
       // Mark as completed
       await updateRequestStatus(requestId, "COMPLETED");
+      void broadcastAdminNotificationsUpdated({
+        action: 'AI_COMPLETED',
+        requestId,
+      });
 
       // TODO: Emit RequestEvent (placeholder for future realtime integration)
       // await prisma.requestEvent.create({ ... });
@@ -63,13 +68,17 @@ const aiWorker = new Worker<AIClassificationJobData>(
       console.error("AI classification worker failed", error);
       // Mark request as failed
       await updateRequestStatus(requestId, "FAILED");
+      void broadcastAdminNotificationsUpdated({
+        action: 'AI_FAILED',
+        requestId,
+      });
       // Record failure event placeholder
       // await prisma.requestEvent.create({ ... });
       throw error; // let BullMQ handle retries according to queue options
     }
   },
   {
-    connection: RedisConnection, // reuse singleton redis client
+    connection: getRedisClient() as unknown as any, // reuse singleton redis client (cast to avoid ioredis typing mismatch)
     // Worker level options (optional but useful for production)
     concurrency: Number(process.env.WORKER_CONCURRENCY) || 5,
     // Backoff strategy is also defined on the queue side; keep defaults here

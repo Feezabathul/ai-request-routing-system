@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import {
   LayoutDashboard,
@@ -18,6 +18,10 @@ import {
   LogOut,
 } from 'lucide-react';
 import { getUserRole, UserRole } from '@/lib/role';
+import { getCurrentUser, clearCurrentUser } from '@/lib/current-user';
+import { CURRENT_AGENT_KEY } from '@/lib/agents';
+import { getPendingNotificationCount } from '@/lib/admin-notifications-client';
+import { NotificationBadge } from '@/components/admin/notifications/NotificationBadge';
 
 interface NavItem {
   name: string;
@@ -56,20 +60,46 @@ const navGroups: NavGroup[] = [
  * active route highlighting, and role-based visibility.
  */
 export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
+  const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [storedRole, setStoredRole] = useState<UserRole | null>(null);
+  const [sessionUser, setSessionUser] = useState<ReturnType<typeof getCurrentUser>>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [pendingNotifications, setPendingNotifications] = useState(0);
 
   useEffect(() => {
     const loadRoleTimer = window.setTimeout(() => {
       setStoredRole(role ?? getUserRole());
+      setSessionUser(getCurrentUser());
       setMounted(true);
     }, 0);
 
     return () => window.clearTimeout(loadRoleTimer);
-  }, [role]);
+  }, [role, pathname]);
+
+  useEffect(() => {
+    const refreshPending = () => setPendingNotifications(getPendingNotificationCount());
+
+    refreshPending();
+    window.addEventListener('storage', refreshPending);
+    window.addEventListener('admin-notifications-updated', refreshPending);
+    window.addEventListener('focus', refreshPending);
+
+    return () => {
+      window.removeEventListener('storage', refreshPending);
+      window.removeEventListener('admin-notifications-updated', refreshPending);
+      window.removeEventListener('focus', refreshPending);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    clearCurrentUser();
+    localStorage.removeItem('userRole');
+    localStorage.removeItem(CURRENT_AGENT_KEY);
+    router.push('/login');
+  };
 
   if (!mounted || !storedRole) {
     return null;
@@ -144,7 +174,12 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
                         {item.icon}
                       </span>
                       {item.name}
-                      {active && (
+                      {item.href === '/dashboard/admin' && effectiveRole === 'ADMIN' && (
+                        <span className="ml-auto">
+                          <NotificationBadge count={pendingNotifications} label="pending requests" />
+                        </span>
+                      )}
+                      {active && item.href !== '/dashboard/admin' && (
                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400" />
                       )}
                     </Link>
@@ -160,17 +195,22 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
       <div className="border-t border-gray-800 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-            {effectiveRole === 'ADMIN' ? 'A' : 'U'}
+            {(sessionUser?.name ?? effectiveRole).charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-200 truncate">
-              {effectiveRole === 'ADMIN' ? 'Administrator' : 'Customer'}
+              {sessionUser?.name ?? (effectiveRole === 'ADMIN' ? 'Administrator' : effectiveRole === 'AGENT' ? 'Agent' : 'User')}
             </p>
             <p className="text-xs text-gray-500 truncate">
-              {effectiveRole}
+              {sessionUser?.email ?? effectiveRole}
             </p>
           </div>
-          <button className="p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+            aria-label="Log out"
+          >
             <LogOut className="h-4 w-4" />
           </button>
         </div>

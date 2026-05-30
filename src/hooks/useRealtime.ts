@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { supabaseBrowser } from '@/lib/supabase';
-import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 /**
  * Handlers for realtime events.
@@ -8,7 +8,7 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
  * or custom identifiers. The payload type is the raw Supabase payload.
  */
 export type RealtimeEventHandlers = {
-  [event: string]: (payload: RealtimePostgresChangesPayload<any>) => void;
+  [event: string]: (payload: RealtimePostgresChangesPayload<Record<string, any>>) => void;
 };
 
 /**
@@ -23,29 +23,37 @@ export function useRealtime(
   handlers: RealtimeEventHandlers = {}
 ): () => void {
   // Keep a reference to the channel so we can unsubscribe on cleanup.
-  const channelRef = useRef<RealtimeChannel | null>(null);
+  const channelRef = useRef<ReturnType<NonNullable<typeof supabase>['channel']> | null>(null);
+  const handlersRef = useRef<RealtimeEventHandlers>(handlers);
+
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
 
   useEffect(() => {
     // Ensure the Supabase client is ready.
-    if (!supabaseBrowser) {
-      console.error('Supabase client is not initialized.');
+    if (!supabase) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Realtime subscription disabled because Supabase is not configured.');
+      }
       return;
     }
 
-    const channel = supabaseBrowser.channel(channelName);
+    const channel = supabase.channel(channelName);
     channelRef.current = channel;
 
     // Register generic listener for all Postgres change events.
     channel.on(
       'postgres_changes',
       { event: '*', schema: 'public' },
-      (payload: RealtimePostgresChangesPayload<any>) => {
+      (payload: RealtimePostgresChangesPayload<Record<string, any>>) => {
         const { eventType } = payload;
+        const currentHandlers = handlersRef.current;
         // Prefer a specific handler, otherwise fall back to a generic '*' handler.
-        if (handlers[eventType]) {
-          handlers[eventType](payload);
-        } else if (handlers['*']) {
-          handlers['*'](payload);
+        if (currentHandlers[eventType]) {
+          currentHandlers[eventType](payload);
+        } else if (currentHandlers['*']) {
+          currentHandlers['*'](payload);
         }
       }
     );
@@ -65,7 +73,7 @@ export function useRealtime(
       }
     };
     // Re‑subscribe only when the channel name changes.
-  }, [channelName, JSON.stringify(handlers)]);
+  }, [channelName]);
 
   // Return a manual unsubscribe function for callers that need explicit control.
   return () => {

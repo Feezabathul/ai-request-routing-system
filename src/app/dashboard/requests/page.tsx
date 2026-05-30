@@ -12,10 +12,14 @@ import Link from 'next/link';
 import { PlusCircle, FileSearch } from 'lucide-react';
 import { getUserRole, UserRole } from '@/lib/role';
 import { getCurrentAgent } from '@/lib/agents';
+import { getCurrentUser, getRequestCreator } from '@/lib/current-user';
 
 interface Request {
   id: string;
   title: string;
+  createdById?: string;
+  createdByName?: string;
+  createdByEmail?: string;
   customerName: string;
   customerEmail: string;
   category: string;
@@ -43,6 +47,7 @@ export default function RequestsPage() {
   const [data, setData] = useState<Request[]>([]);
   const [role, setRole] = useState<UserRole | null>(null);
   const [currentAgent, setCurrentAgent] = useState<CurrentAgent | null>(null);
+  const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCurrentUser>>(null);
 
   // Load requests from localStorage
   useEffect(() => {
@@ -65,14 +70,29 @@ export default function RequestsPage() {
     const loadSessionTimer = window.setTimeout(() => {
       setRole(getUserRole());
       setCurrentAgent(getCurrentAgent());
+      setCurrentUser(getCurrentUser());
     }, 0);
 
     return () => window.clearTimeout(loadSessionTimer);
   }, []);
 
-  const visibleData = role === 'AGENT' && currentAgent
-    ? data.filter((request) => request.assignedAgentId === currentAgent.id)
-    : data;
+  const visibleData = (() => {
+    if (role === 'AGENT' && currentAgent) {
+      return data.filter((request) => request.assignedAgentId === currentAgent.id);
+    }
+    if (role === 'CUSTOMER' && currentUser) {
+      return data.filter((request) => {
+        if (request.createdById) {
+          return request.createdById === currentUser.id;
+        }
+        return (
+          request.createdByEmail?.toLowerCase() === currentUser.email.toLowerCase() ||
+          request.customerEmail?.toLowerCase() === currentUser.email.toLowerCase()
+        );
+      });
+    }
+    return data;
+  })();
 
   const filtered = visibleData.filter((r) => {
     const matchesQuery =
@@ -96,13 +116,16 @@ export default function RequestsPage() {
       ),
     },
     {
-      header: 'Customer',
-      accessor: (row: Request) => (
-        <div>
-          <p className="text-sm font-medium text-gray-800">{row.customerName}</p>
-          <p className="text-xs text-gray-600">{row.customerEmail}</p>
-        </div>
-      ),
+      header: 'Created By',
+      accessor: (row: Request) => {
+        const creator = getRequestCreator(row);
+        return (
+          <div>
+            <p className="text-sm font-medium text-gray-800">{creator.name}</p>
+            <p className="text-xs text-gray-600">{creator.email}</p>
+          </div>
+        );
+      },
     },
     {
       header: 'AI Category',
@@ -175,7 +198,11 @@ export default function RequestsPage() {
         <div className="text-center py-12 flex flex-col items-center">
           <FileSearch className="w-16 h-16 text-gray-400 mb-4" />
           <p className="text-lg text-gray-600 mb-2">
-            {role === 'AGENT' ? 'No requests assigned to you yet' : 'No requests found'}
+            {role === 'AGENT'
+              ? 'No requests assigned to you yet'
+              : role === 'CUSTOMER'
+              ? 'You have not created any requests yet'
+              : 'No requests found'}
           </p>
           {role !== 'AGENT' && (
             <Button onClick={() => router.push('/dashboard/requests/create')} variant="primary" className="flex items-center gap-2">

@@ -6,8 +6,8 @@ import { Clock } from 'lucide-react';
 interface RequestHeaderProps {
   title: string;
   requestId: string;
-  customerName: string;
-  customerEmail: string;
+  createdByName: string;
+  createdByEmail: string;
   createdAt: string;
   status: string;
   priority: string;
@@ -16,8 +16,8 @@ interface RequestHeaderProps {
 export const RequestHeader: React.FC<RequestHeaderProps> = ({
   title,
   requestId,
-  customerName,
-  customerEmail,
+  createdByName,
+  createdByEmail,
   createdAt,
   status,
   priority,
@@ -38,20 +38,25 @@ export const RequestHeader: React.FC<RequestHeaderProps> = ({
   };
 
   return (
-    <Card className="p-6 bg-white bg-opacity-20 backdrop-blur-sm">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <Card className="bg-white bg-opacity-20 p-6 backdrop-blur-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>
-          <p className="text-sm text-gray-600 mt-1">ID: {requestId}</p>
-          <p className="text-sm text-gray-600">
-            {customerName} &lt;{customerEmail}&gt;
-          </p>
-          <p className="text-sm text-gray-500 mt-1 flex items-center">
-            <Clock className="w-4 h-4 mr-1" />
-            {new Date(createdAt).toLocaleDateString()}
+          <p className="mt-1 text-sm text-gray-600">ID: {requestId}</p>
+          <div className="mt-2 text-sm text-gray-600">
+            <p>
+              <span className="font-medium text-gray-800">Created By:</span> {createdByName}
+            </p>
+            <p>
+              <span className="font-medium text-gray-800">Email:</span> {createdByEmail}
+            </p>
+          </div>
+          <p className="mt-1 flex items-center text-sm text-gray-500">
+            <Clock className="mr-1 h-4 w-4" />
+            {new Date(createdAt).toLocaleString()}
           </p>
         </div>
-        <div className="flex space-x-2 mt-2 sm:mt-0">
+        <div className="mt-2 flex space-x-2 sm:mt-0">
           <Badge variant="default" className={statusColors[status] || ''}>
             {status}
           </Badge>

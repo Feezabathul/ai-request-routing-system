@@ -27,7 +27,7 @@ async function createEvent(params: {
         actorId: actorId ?? undefined,
         eventType: type,
         description: description ?? null,
-        metadata: metadata ? JSON.stringify(metadata) : null,
+        metadata: metadata ? (JSON.stringify(metadata) as unknown as object) : undefined,
       },
     });
   } catch (err) {
@@ -120,7 +120,7 @@ export async function logAssignmentChangedEvent(params: {
   await createEvent({
     requestId: params.requestId,
     actorId: params.actorId,
-    type: RequestEventType.ASSIGNED_CHANGED,
+    type: RequestEventType.ASSIGNED,
     description: `Assignment changed`,
     metadata: {
       ...params.metadata,

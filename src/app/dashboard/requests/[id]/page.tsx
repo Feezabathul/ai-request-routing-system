@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ import {
   type RequestStatus,
 } from '@/lib/request-storage';
 import { getCurrentAgent } from '@/lib/agents';
+import { getCurrentUser, getRequestCreator } from '@/lib/current-user';
 
 const Notes: React.FC<{ requestId: string }> = ({ requestId }) => {
   const [notes, setNotes] = useState<Array<{ id: string; text: string; createdAt: string }>>([]);
@@ -125,6 +126,7 @@ function AccessDenied({ onBack }: { onBack: () => void }) {
 export default function RequestDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [request, setRequest] = useState<StoredRequest | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [showAssignment, setShowAssignment] = useState(false);
@@ -152,12 +154,32 @@ export default function RequestDetailPage() {
         }
       }
 
+      if (userRole === 'CUSTOMER') {
+        const currentUser = getCurrentUser();
+        const userId = currentUser?.id ?? '';
+        const ownsRequest =
+          (found.createdById && found.createdById === userId) ||
+          (!found.createdById &&
+            found.customerEmail?.toLowerCase() === currentUser?.email?.toLowerCase());
+        if (!currentUser || !ownsRequest) {
+          setAccessDenied(true);
+          setLoading(false);
+          return;
+        }
+      }
+
       setRequest(found);
       setLoading(false);
     }, 0);
 
     return () => window.clearTimeout(loadRequestTimer);
   }, [id]);
+
+  useEffect(() => {
+    if (searchParams.get('assign') === '1' && role === 'ADMIN' && request && !request.assignedAgentId) {
+      setShowAssignment(true);
+    }
+  }, [searchParams, role, request]);
 
   const handleStatusUpdate = (newStatus: RequestStatus) => {
     if (!request) return;
@@ -231,14 +253,15 @@ export default function RequestDetailPage() {
   ];
 
   const assignedName = request.assignedAgentName ?? request.assignedAgent;
+  const creator = getRequestCreator(request);
 
   return (
     <section className="mx-auto max-w-4xl space-y-6 p-4">
       <RequestHeader
         title={request.title}
         requestId={request.id}
-        customerName={request.customerName}
-        customerEmail={request.customerEmail}
+        createdByName={creator.name}
+        createdByEmail={creator.email}
         createdAt={request.createdAt}
         status={request.status}
         priority={request.priority}

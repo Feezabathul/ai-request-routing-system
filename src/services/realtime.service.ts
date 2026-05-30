@@ -10,6 +10,7 @@ export enum RealtimeEventType {
   AI_COMPLETED = "AI_COMPLETED",
   NOTE_ADDED = "NOTE_ADDED",
   TIMELINE_EVENT = "TIMELINE_EVENT",
+  ADMIN_NOTIFICATIONS_UPDATED = "ADMIN_NOTIFICATIONS_UPDATED",
 }
 
 /**
@@ -27,6 +28,13 @@ export interface RealtimePayload {
  * Using a per‑request channel keeps the broadcast lightweight and scoped.
  */
 async function broadcast(payload: RealtimePayload): Promise<void> {
+  if (!supabaseService) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Supabase service client is not configured. Skipping realtime broadcast.');
+    }
+    return;
+  }
+
   const channelName = `request_${payload.requestId}`;
   try {
     const channel = supabaseService.channel(channelName);
@@ -88,3 +96,34 @@ export async function broadcastTimelineEvent(
     metadata: { ...metadata, eventName },
   });
 }
+
+const ADMIN_NOTIFICATIONS_CHANNEL = 'admin_notifications';
+
+/** Notify admin dashboards that the unassigned request inbox changed. */
+export async function broadcastAdminNotificationsUpdated(
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  if (!supabaseService) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Supabase service client is not configured. Skipping admin notifications broadcast.');
+    }
+    return;
+  }
+
+  try {
+    const channel = supabaseService.channel(ADMIN_NOTIFICATIONS_CHANNEL);
+    await channel.subscribe();
+    await channel.send({
+      type: 'broadcast',
+      event: RealtimeEventType.ADMIN_NOTIFICATIONS_UPDATED,
+      payload: {
+        timestamp: new Date().toISOString(),
+        ...metadata,
+      },
+    });
+  } catch (err) {
+    console.error('Failed to broadcast admin notifications update:', err);
+  }
+}
+
+export { ADMIN_NOTIFICATIONS_CHANNEL };

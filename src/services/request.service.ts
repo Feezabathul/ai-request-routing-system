@@ -5,6 +5,7 @@ import {
   type CustomerRequest,
 } from "@/generated/prisma/client";
 import { requestRepository } from "@/repositories/request.repository";
+import { broadcastAdminNotificationsUpdated } from "@/services/realtime.service";
 import {
   DEFAULT_AI_PROCESSING_STATUS,
   assignAgentSchema,
@@ -82,6 +83,8 @@ export const createRequest = async (input: unknown): Promise<CustomerRequest> =>
     }
   })();
 
+  void broadcastAdminNotificationsUpdated({ action: 'REQUEST_CREATED', requestId: request.id });
+
   return request;
 };
 
@@ -110,6 +113,12 @@ export const updateRequestStatus = async (requestId: string, input: unknown) => 
     metadata: { status: parsed.status },
   });
 
+  void broadcastAdminNotificationsUpdated({
+    action: 'REQUEST_STATUS_UPDATED',
+    requestId: parsedId.id,
+    status: parsed.status,
+  });
+
   return updated;
 };
 
@@ -125,6 +134,8 @@ export const assignAgentToRequest = async (requestId: string, input: unknown) =>
     eventType: RequestEventType.ASSIGNED,
     metadata: { assignedToId: parsed.agentId },
   });
+
+  void broadcastAdminNotificationsUpdated({ action: 'REQUEST_ASSIGNED', requestId: parsedId.id });
 
   return updated;
 };

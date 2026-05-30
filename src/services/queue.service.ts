@@ -8,7 +8,7 @@ import { QUEUE_NAMES } from '@/constants/queues';
  *   - `connection` re‑uses the singleton Redis instance.
  */
 const baseOptions: QueueOptions = {
-  connection: getRedisClient(),
+  connection: getRedisClient() as unknown as any,
   defaultJobOptions: {
     attempts: 5,
     backoff: {

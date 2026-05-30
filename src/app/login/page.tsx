@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { setUserRole, UserRole } from '@/lib/role';
 import { findAgentByCredentials, CURRENT_AGENT_KEY } from '@/lib/agents';
+import { setCurrentUser, clearCurrentUser } from '@/lib/current-user';
 import { AlertCircle } from "lucide-react";
 
 interface StoredUser {
@@ -40,6 +41,12 @@ export default function LoginPage() {
       if (normalizedEmail === 'admin@gmail.com' && password === 'admin123') {
         role = 'ADMIN';
         routePath = '/dashboard/admin';
+        setCurrentUser({
+          id: 'admin-1',
+          name: 'Administrator',
+          email: 'admin@gmail.com',
+          role: 'ADMIN',
+        });
       } else {
         // 2. Check agents from localStorage
         const agent = findAgentByCredentials(normalizedEmail, password);
@@ -47,6 +54,12 @@ export default function LoginPage() {
           role = 'AGENT';
           routePath = '/dashboard';
           localStorage.setItem(CURRENT_AGENT_KEY, JSON.stringify(agent));
+          setCurrentUser({
+            id: agent.id,
+            name: agent.name,
+            email: agent.email,
+            role: 'AGENT',
+          });
         }
 
         // 3. If not agent, check registered users
@@ -60,6 +73,12 @@ export default function LoginPage() {
             if (user) {
               role = 'CUSTOMER';
               routePath = '/dashboard';
+              setCurrentUser({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: 'CUSTOMER',
+              });
             }
           }
         }
@@ -75,6 +94,9 @@ export default function LoginPage() {
       // Set role and navigate
       setUserRole(role);
       if (role !== 'AGENT') {
+        localStorage.removeItem(CURRENT_AGENT_KEY);
+      }
+      if (role === 'ADMIN') {
         localStorage.removeItem(CURRENT_AGENT_KEY);
       }
       await new Promise((res) => setTimeout(res, 800));

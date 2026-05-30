@@ -5,8 +5,17 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { setUserRole } from '@/lib/role';
+import { setUserRole, UserRole } from '@/lib/role';
+import { findAgentByCredentials, CURRENT_AGENT_KEY } from '@/lib/agents';
 import { AlertCircle } from "lucide-react";
+
+interface StoredUser {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: 'CUSTOMER';
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,7 +32,7 @@ export default function LoginPage() {
     setError(null);
 
     const normalizedEmail = email.trim().toLowerCase();
-    let role = '';
+    let role: UserRole | null = null;
     let routePath = '';
 
     try {
@@ -33,23 +42,18 @@ export default function LoginPage() {
         routePath = '/dashboard/admin';
       } else {
         // 2. Check agents from localStorage
-        const storedAgents = localStorage.getItem('agents');
-        if (storedAgents) {
-          const agents: any[] = JSON.parse(storedAgents);
-          const agent = agents.find(
-            (a) => a.email === normalizedEmail && a.password === password
-          );
-          if (agent) {
-            role = 'AGENT';
-            routePath = '/dashboard';
-          }
+        const agent = findAgentByCredentials(normalizedEmail, password);
+        if (agent) {
+          role = 'AGENT';
+          routePath = '/dashboard';
+          localStorage.setItem(CURRENT_AGENT_KEY, JSON.stringify(agent));
         }
 
         // 3. If not agent, check registered users
         if (!role) {
           const storedUsers = localStorage.getItem('users');
           if (storedUsers) {
-            const users: any[] = JSON.parse(storedUsers);
+            const users: StoredUser[] = JSON.parse(storedUsers);
             const user = users.find(
               (u) => u.email === normalizedEmail && u.password === password
             );
@@ -70,6 +74,9 @@ export default function LoginPage() {
 
       // Set role and navigate
       setUserRole(role);
+      if (role !== 'AGENT') {
+        localStorage.removeItem(CURRENT_AGENT_KEY);
+      }
       await new Promise((res) => setTimeout(res, 800));
       setLoading(false);
       router.push(routePath);

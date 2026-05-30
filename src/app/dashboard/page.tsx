@@ -8,13 +8,18 @@ import { AIProcessing } from '@/components/dashboard/AIProcessing';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { RealtimeIndicator } from '@/components/dashboard/RealtimeIndicator';
 import { BarChart2, Clock, RotateCw, CheckCircle, Sparkles } from 'lucide-react';
+import { getUserRole } from '@/lib/role';
 
 interface Request {
   id: string;
   title: string;
   status: 'Pending' | 'In Progress' | 'Resolved' | 'Closed';
   aiStatus?: 'Processing' | 'Completed' | 'Failed';
-  [key: string]: any;
+  assignedAgentId?: string;
+}
+
+interface CurrentAgent {
+  id: string;
 }
 
 export default function DashboardPage() {
@@ -31,7 +36,13 @@ export default function DashboardPage() {
       if (typeof window === 'undefined') return;
       
       const stored = localStorage.getItem('requests');
-      const requests: Request[] = stored ? JSON.parse(stored) : [];
+      const storedRequests: Request[] = stored ? JSON.parse(stored) : [];
+      const currentAgent: CurrentAgent | null = localStorage.getItem('currentAgent')
+        ? JSON.parse(localStorage.getItem('currentAgent') || 'null')
+        : null;
+      const requests = getUserRole() === 'AGENT' && currentAgent
+        ? storedRequests.filter((request) => request.assignedAgentId === currentAgent.id)
+        : storedRequests;
       
       const totalCount = requests.length;
       const pendingCount = requests.filter(r => r.status === 'Pending').length;

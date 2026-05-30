@@ -5,44 +5,18 @@ import {
   Bot,
   Search,
   Plus,
-  Filter,
-  MoreVertical,
   Edit,
   Trash2,
-  ArrowUpDown,
   CheckCircle,
   Clock,
-  XCircle,
-  Star,
-  MessageSquare,
-  TrendingUp,
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
   Check,
   X,
 } from 'lucide-react';
 import { AdminPageGuard } from '@/components/dashboard/AdminPageGuard';
+import { DEPARTMENTS, type Department } from '@/lib/departments';
+import { AGENTS_STORAGE_KEY, type StoredAgent } from '@/lib/agents';
 
-/* ── Types & Configuration ─────────────────────────────────── */
-
-interface Agent {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: 'AGENT';
-  status: 'ACTIVE' | 'INACTIVE';
-  createdAt: string;
-  avatar?: string;
-  department?: string;
-  assignedRequests?: number;
-  resolvedToday?: number;
-  avgResponseTime?: string;
-  rating?: number;
-  joinedDate?: string;
-  skills?: string[];
-}
+type Agent = StoredAgent;
 
 
 
@@ -76,6 +50,7 @@ export default function AgentsPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    department: '' as Department | '',
     password: '',
     confirmPassword: '',
   });
@@ -83,14 +58,18 @@ export default function AgentsPage() {
 
   // Load agents from localStorage on mount
   useEffect(() => {
-    const storedAgents = localStorage.getItem('agents');
-    if (storedAgents) {
-      try {
-        setAgents(JSON.parse(storedAgents));
-      } catch (e) {
-        console.error('Failed to parse agents from localStorage:', e);
+    const loadAgentsTimer = window.setTimeout(() => {
+      const storedAgents = localStorage.getItem(AGENTS_STORAGE_KEY);
+      if (storedAgents) {
+        try {
+          setAgents(JSON.parse(storedAgents));
+        } catch (e) {
+          console.error('Failed to parse agents from localStorage:', e);
+        }
       }
-    }
+    }, 0);
+
+    return () => window.clearTimeout(loadAgentsTimer);
   }, []);
 
   // Show success message for 3 seconds
@@ -112,6 +91,9 @@ export default function AgentsPage() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Invalid email address';
     }
+    if (!formData.department) {
+      errors.department = 'Department is required';
+    }
     if (!formData.password) {
       errors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -122,7 +104,7 @@ export default function AgentsPage() {
     }
 
     // Check for duplicate email
-    if (agents.some((agent) => agent.email.toLowerCase() === formData.email.toLowerCase())) {
+    if (agents.some((agent) => agent.id !== editingAgent?.id && agent.email.toLowerCase() === formData.email.toLowerCase())) {
       errors.email = 'This email is already in use';
     }
 
@@ -132,6 +114,7 @@ export default function AgentsPage() {
 
   const handleAddAgent = () => {
     if (!validateForm()) return;
+    const department = formData.department as Department;
 
     const newAgent: Agent = {
       id: crypto.randomUUID(),
@@ -142,20 +125,22 @@ export default function AgentsPage() {
       status: 'ACTIVE',
       createdAt: new Date().toISOString(),
       avatar: formData.name.substring(0, 2).toUpperCase(),
+      department,
     };
 
     const updatedAgents = [...agents, newAgent];
     setAgents(updatedAgents);
-    localStorage.setItem('agents', JSON.stringify(updatedAgents));
+    localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(updatedAgents));
 
     setSuccessMessage('Agent created successfully!');
     setShowSuccess(true);
-    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+    setFormData({ name: '', email: '', department: '', password: '', confirmPassword: '' });
     setShowAddModal(false);
   };
 
   const handleEditAgent = () => {
     if (!editingAgent || !validateForm()) return;
+    const department = formData.department as Department;
 
     // Check for duplicate email (excluding current agent)
     if (agents.some((agent) => agent.id !== editingAgent.id && agent.email.toLowerCase() === formData.email.toLowerCase())) {
@@ -171,16 +156,17 @@ export default function AgentsPage() {
             email: formData.email.trim().toLowerCase(),
             password: formData.password,
             avatar: formData.name.substring(0, 2).toUpperCase(),
+            department,
           }
         : agent
     );
 
     setAgents(updatedAgents);
-    localStorage.setItem('agents', JSON.stringify(updatedAgents));
+    localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(updatedAgents));
 
     setSuccessMessage('Agent updated successfully!');
     setShowSuccess(true);
-    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+    setFormData({ name: '', email: '', department: '', password: '', confirmPassword: '' });
     setEditingAgent(null);
     setShowEditModal(false);
   };
@@ -189,7 +175,7 @@ export default function AgentsPage() {
     if (confirm('Are you sure you want to delete this agent?')) {
       const updatedAgents = agents.filter((agent) => agent.id !== id);
       setAgents(updatedAgents);
-      localStorage.setItem('agents', JSON.stringify(updatedAgents));
+      localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(updatedAgents));
       setSuccessMessage('Agent deleted successfully!');
       setShowSuccess(true);
     }
@@ -200,6 +186,7 @@ export default function AgentsPage() {
     setFormData({
       name: agent.name,
       email: agent.email,
+      department: agent.department ?? '',
       password: agent.password,
       confirmPassword: agent.password,
     });
@@ -209,14 +196,14 @@ export default function AgentsPage() {
 
   const closeAddModal = () => {
     setShowAddModal(false);
-    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+    setFormData({ name: '', email: '', department: '', password: '', confirmPassword: '' });
     setFormErrors({});
   };
 
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditingAgent(null);
-    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+    setFormData({ name: '', email: '', department: '', password: '', confirmPassword: '' });
     setFormErrors({});
   };
 
@@ -342,6 +329,7 @@ export default function AgentsPage() {
                     <tr className="border-b border-gray-100 bg-gray-50/50">
                       <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Agent</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created</th>
                       <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -363,6 +351,7 @@ export default function AgentsPage() {
                             </div>
                           </td>
                           <td className="px-5 py-3.5 text-sm text-gray-600">{agent.email}</td>
+                          <td className="px-5 py-3.5 text-sm text-gray-600">{agent.department ?? 'Not Set'}</td>
                           <td className="px-5 py-3.5">
                             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${sc.badge}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${sc.color}`} />
@@ -500,6 +489,25 @@ export default function AgentsPage() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <select
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value as Department })}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-colors ${
+                      formErrors.department ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <option value="">Select department</option>
+                    {DEPARTMENTS.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.department && <p className="text-xs text-red-600 mt-1">{formErrors.department}</p>}
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                   <input
                     type="password"
@@ -578,6 +586,25 @@ export default function AgentsPage() {
                     }`}
                   />
                   {formErrors.email && <p className="text-xs text-red-600 mt-1">{formErrors.email}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <select
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value as Department })}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-colors ${
+                      formErrors.department ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <option value="">Select department</option>
+                    {DEPARTMENTS.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.department && <p className="text-xs text-red-600 mt-1">{formErrors.department}</p>}
                 </div>
 
                 <div>

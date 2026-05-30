@@ -8,13 +8,22 @@ interface RequestInfoProps {
     description?: string;
     category: string;
     assignedAgent?: string;
+    assignedAgentDepartment?: string;
+    assignedAt?: string;
     workflowStatus?: string;
-    // any other fields ignored
   };
 }
 
 export const RequestInfo: React.FC<RequestInfoProps> = ({ request }) => {
-  const { description = 'No description provided.', category, assignedAgent, workflowStatus = 'N/A' } = request;
+  const {
+    description = 'No description provided.',
+    category,
+    assignedAgent,
+    assignedAgentDepartment,
+    assignedAt,
+    workflowStatus = 'N/A',
+  } = request;
+
   return (
     <Card className="bg-white bg-opacity-20 backdrop-blur-sm p-6">
       <h2 className="mb-4 text-xl font-semibold text-gray-800">Request Information</h2>
@@ -27,9 +36,25 @@ export const RequestInfo: React.FC<RequestInfoProps> = ({ request }) => {
         <div className="flex items-center gap-2">
           <span className="text-gray-600">Assigned:</span>
           <Badge variant="default" className="bg-indigo-100 text-indigo-800">
-            {assignedAgent ?? 'Unassigned'}
+            {assignedAgent ?? 'Not Assigned'}
           </Badge>
         </div>
+        {assignedAgent && (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600">Department:</span>
+              <Badge variant="default" className="bg-blue-100 text-blue-800">
+                {assignedAgentDepartment ?? 'N/A'}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600">Assigned Date:</span>
+              <Badge variant="default" className="bg-emerald-100 text-emerald-800">
+                {assignedAt ?? 'N/A'}
+              </Badge>
+            </div>
+          </>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-gray-600">Workflow:</span>
           <Badge variant="default" className="bg-purple-100 text-purple-800">

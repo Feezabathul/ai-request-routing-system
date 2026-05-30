@@ -26,6 +26,9 @@ interface StoredRequest {
   priority?: RequestPriority;
   status?: RequestStatus;
   assignedAgent?: string;
+  assignedAgentId?: string;
+  assignedAgentName?: string;
+  assignedAt?: string;
   createdAt?: string;
 }
 
@@ -215,7 +218,7 @@ export default function AdminOverviewPage() {
             {data.requests.length === 0 ? (
               <div className="py-10 text-center border border-dashed border-gray-200 rounded-lg">
                 <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">No requests available</p>
+                <p className="text-sm text-gray-500">No recent requests available</p>
               </div>
             ) : (
               <div className="overflow-x-auto">

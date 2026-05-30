@@ -1,6 +1,4 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-
 export interface FiltersState {
   status: string;
   priority: string;
@@ -57,20 +55,13 @@ export const RequestsFilters: React.FC<RequestsFiltersProps> = ({ filters, setFi
         className="rounded border-gray-300 p-2"
       >
         <option value="">All Categories</option>
+        <option value="Technical Support">Technical Support</option>
+        <option value="Billing">Billing</option>
+        <option value="Account Management">Account Management</option>
+        <option value="General Support">General Support</option>
         <option value="Support">Support</option>
         <option value="Bug">Bug</option>
         <option value="Feature">Feature</option>
-      </select>
-      <select
-        name="agent"
-        value={filters.agent}
-        onChange={handleChange}
-        className="rounded border-gray-300 p-2"
-      >
-        <option value="">All Agents</option>
-        <option value="Alice">Alice</option>
-        <option value="Bob">Bob</option>
-        <option value="Charlie">Charlie</option>
       </select>
       <button
         onClick={clearFilters}

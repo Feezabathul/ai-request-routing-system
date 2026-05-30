@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Cog6ToothIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { getUserRole } from '@/lib/role';
 
 interface Request {
   id: string;
   title: string;
   aiStatus?: 'Processing' | 'Completed' | 'Failed';
   aiConfidence?: number;
-  [key: string]: any;
+  assignedAgentId?: string;
+}
+
+interface CurrentAgent {
+  id: string;
 }
 
 interface ProcessingItem {
@@ -26,7 +31,13 @@ export const AIProcessing: React.FC<{ className?: string }> = ({ className }) =>
       if (typeof window === 'undefined') return;
       
       const stored = localStorage.getItem('requests');
-      const requests: Request[] = stored ? JSON.parse(stored) : [];
+      const storedRequests: Request[] = stored ? JSON.parse(stored) : [];
+      const currentAgent: CurrentAgent | null = localStorage.getItem('currentAgent')
+        ? JSON.parse(localStorage.getItem('currentAgent') || 'null')
+        : null;
+      const requests = getUserRole() === 'AGENT' && currentAgent
+        ? storedRequests.filter((request) => request.assignedAgentId === currentAgent.id)
+        : storedRequests;
       
       // Filter requests that are currently processing or have completed/failed
       const processing = requests

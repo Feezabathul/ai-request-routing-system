@@ -24,6 +24,8 @@ export const Timeline: React.FC<{ events: TimelineEvent[] }> = ({ events }) => {
         return `Status changed from ${event.metadata?.from ?? ''} to ${event.metadata?.to ?? ''}`;
       case 'NOTE_ADDED':
         return `Note added`;
+      case 'ASSIGNED_CHANGED':
+        return 'Agent assigned to request';
       default:
         return event.type.replace('_', ' ');
     }

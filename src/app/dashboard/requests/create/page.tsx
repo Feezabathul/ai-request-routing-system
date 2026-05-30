@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { DEPARTMENTS, classifyRequestText } from "@/lib/departments";
 
 
 export default function CreateRequestPage() {
@@ -14,14 +15,23 @@ export default function CreateRequestPage() {
     customerName: "",
     customerEmail: "",
     description: "",
-    category: "Support",
+    category: "General Support",
     priority: "Medium",
   });
   const [message, setMessage] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === 'title' || name === 'description') {
+        next.category = classifyRequestText(
+          name === 'title' ? value : prev.title,
+          name === 'description' ? value : prev.description
+        );
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +47,9 @@ export default function CreateRequestPage() {
       category: form.category,
       priority: form.priority as "Low" | "Medium" | "High" | "Urgent",
       status: "Pending" as const,
-      assignedAgent: undefined,
+      assignedAgentId: undefined,
+      assignedAgentName: undefined,
+      assignedAt: undefined,
       createdAt: new Date().toISOString(),
     };
     // Save to localStorage
@@ -127,10 +139,13 @@ export default function CreateRequestPage() {
               onChange={handleChange}
               className="w-full rounded-lg border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
             >
-              <option value="Support">Support</option>
-              <option value="Bug">Bug</option>
-              <option value="Feature">Feature</option>
+              {DEPARTMENTS.map((dept) => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
             </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Category is auto-suggested from title and description (AI classification).
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="priority">Priority</label>

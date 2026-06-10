@@ -129,11 +129,14 @@ export class RequestRepository {
       await Promise.all([
         // Total: every request regardless of status
         prisma.customerRequest.count(),
-        // New: only OPEN status (freshly submitted, not yet touched)
+        // New Waiting: unassigned requests not yet resolved/closed
         prisma.customerRequest.count({
-          where: { status: RequestStatus.OPEN },
+          where: {
+            assignedToId: null,
+            status: { notIn: [RequestStatus.RESOLVED, RequestStatus.CLOSED] },
+          },
         }),
-        // In Progress: assigned to an agent and not yet resolved/closed
+        // Assigned: assigned to an agent and not yet resolved/closed
         prisma.customerRequest.count({
           where: {
             assignedToId: { not: null },

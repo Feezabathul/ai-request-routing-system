@@ -7,7 +7,6 @@ import { AdminPageGuard } from '@/components/dashboard/AdminPageGuard';
 import { NotificationList } from '@/components/admin/notifications/NotificationList';
 import { useAdminNotifications } from '@/hooks/useAdminNotifications';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 type RequestStatus = 'Pending' | 'In Progress' | 'AI Processing' | 'Resolved' | 'Closed' | 'Open';
 type RequestPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
@@ -110,7 +109,6 @@ export default function AdminOverviewPage() {
     error: notificationsError,
   } = useAdminNotifications();
 
-  const { stats, loading: statsLoading } = useDashboardStats();
 
   const loadDashboardData = useCallback(() => {
     setData({
@@ -164,36 +162,6 @@ export default function AdminOverviewPage() {
           error={notificationsError}
         />
 
-        <DashboardStats stats={stats} loading={statsLoading} className="my-6" />
-
-        <section className="bg-white rounded-xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">Agent Workload</h2>
-          </div>
-          <div className="space-y-3">
-            {statsLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="h-16 rounded-xl bg-gray-100 animate-pulse" />
-              ))
-            ) : stats?.agentWorkload.length ? (
-              stats.agentWorkload.map((agent) => (
-                <div
-                  key={agent.agentId}
-                  className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
-                >
-                  <p className="text-sm font-medium text-gray-900">{agent.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {agent.activeAssignedRequests} Active Request{agent.activeAssignedRequests === 1 ? '' : 's'}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center text-sm text-gray-500">
-                No active assigned agent workload found.
-              </div>
-            )}
-          </div>
-        </section>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <section className="bg-white rounded-xl border border-gray-100 p-5">

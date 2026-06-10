@@ -1,7 +1,7 @@
 // src/repositories/note.repository.ts
 
 import { prisma } from "../lib/prisma";
-import { InternalNote } from "@/generated/prisma/client";
+import { InternalNote } from "@prisma/client";
 
 /**
  * Repository layer for internal notes.

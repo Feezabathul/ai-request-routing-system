@@ -6,7 +6,7 @@ import {
   RequestStatus,
   type CustomerRequest,
   type RequestEvent,
-} from "@/generated/prisma/client";
+} from "@prisma/client";
 
 export type CreateCustomerRequestData = {
   customerName: string;
@@ -123,45 +123,52 @@ export class RequestRepository {
   }
 
   async getDashboardStats() {
+    // Run the four count queries independently — they must never be zeroed
+    // out by an unrelated failure in the agent-workload raw query below.
+    const [totalRequests, newRequests, inProgressRequests, resolvedRequests] =
+      await Promise.all([
+        // Total: every request regardless of status
+        prisma.customerRequest.count(),
+        // New: only OPEN status (freshly submitted, not yet touched)
+        prisma.customerRequest.count({
+          where: { status: RequestStatus.OPEN },
+        }),
+        // In Progress: assigned to an agent and not yet resolved/closed
+        prisma.customerRequest.count({
+          where: {
+            assignedToId: { not: null },
+            status: { notIn: [RequestStatus.RESOLVED, RequestStatus.CLOSED] },
+          },
+        }),
+        // Resolved: completed (RESOLVED or CLOSED)
+        prisma.customerRequest.count({
+          where: { status: { in: [RequestStatus.RESOLVED, RequestStatus.CLOSED] } },
+        }),
+      ]);
+
+    console.log('[dashboard] totalRequests=', totalRequests);
+    console.log('[dashboard] newRequests=', newRequests);
+    console.log('[dashboard] inProgressRequests=', inProgressRequests);
+    console.log('[dashboard] resolvedRequests=', resolvedRequests);
+
+    // Agent workload uses $queryRaw (groupBy not supported with driver adapters).
+    // Isolated in its own try-catch so a raw-SQL failure can never zero the counts above.
+    let agentWorkload: { agentId: string; name: string; activeAssignedRequests: number }[] = [];
     try {
-      const [totalRequests, newRequests, inProgressRequests, resolvedRequests, activeAssignedCounts] =
-        await Promise.all([
-          prisma.customerRequest.count(),
-          prisma.customerRequest.count({
-            where: {
-              assignedToId: null,
-              status: { notIn: [RequestStatus.RESOLVED, RequestStatus.CLOSED] },
-            },
-          }),
-          prisma.customerRequest.count({
-            where: {
-              assignedToId: { not: null },
-              status: { in: [RequestStatus.OPEN, RequestStatus.IN_PROGRESS] },
-            },
-          }),
-          prisma.customerRequest.count({
-            where: { status: { in: [RequestStatus.RESOLVED, RequestStatus.CLOSED] } },
-          }),
-          prisma.customerRequest.groupBy({
-            by: ['assignedToId'],
-            where: {
-              assignedToId: { not: null },
-              status: { notIn: [RequestStatus.RESOLVED, RequestStatus.CLOSED] },
-            },
-            _count: { assignedToId: true },
-          }),
-        ]);
+      const activeAssignedCounts = await prisma.$queryRaw<
+        Array<{ assignedToId: string; count: bigint }>
+      >`
+        SELECT "assignedToId", COUNT(*) as count
+        FROM "public"."CustomerRequest"
+        WHERE "assignedToId" IS NOT NULL
+          AND status NOT IN (
+            ${RequestStatus.RESOLVED}::text::"public"."RequestStatus",
+            ${RequestStatus.CLOSED}::text::"public"."RequestStatus"
+          )
+        GROUP BY "assignedToId"
+      `;
 
-      // Log counts for debugging/verification
-      console.log('[dashboard] totalRequests=', totalRequests);
-      console.log('[dashboard] newRequests=', newRequests);
-      console.log('[dashboard] inProgressRequests=', inProgressRequests);
-      console.log('[dashboard] resolvedRequests=', resolvedRequests);
-
-      const agentIds = activeAssignedCounts.map((row) => row.assignedToId).filter(
-        (id): id is string => id !== null,
-      );
-
+      const agentIds = activeAssignedCounts.map((row) => row.assignedToId);
       const agentNames =
         agentIds.length > 0
           ? await prisma.user.findMany({
@@ -170,32 +177,24 @@ export class RequestRepository {
             })
           : [];
 
-      const agentWorkload = activeAssignedCounts
+      agentWorkload = activeAssignedCounts
         .map((row) => ({
-          agentId: row.assignedToId as string,
-          name: agentNames.find((agent) => agent.id === row.assignedToId)?.name ?? 'Agent',
-          activeAssignedRequests: row._count.assignedToId,
+          agentId: row.assignedToId,
+          name: agentNames.find((a) => a.id === row.assignedToId)?.name ?? 'Agent',
+          activeAssignedRequests: Number(row.count),
         }))
         .sort((a, b) => b.activeAssignedRequests - a.activeAssignedRequests);
-
-      return {
-        totalRequests,
-        newRequests,
-        inProgressRequests,
-        resolvedRequests,
-        agentWorkload,
-      };
     } catch (err) {
-      console.error('[dashboard] Failed to compute stats:', err);
-      // Return safe zeros so the dashboard can still render in dev environments.
-      return {
-        totalRequests: 0,
-        newRequests: 0,
-        inProgressRequests: 0,
-        resolvedRequests: 0,
-        agentWorkload: [],
-      };
+      console.error('[dashboard] Failed to compute agent workload:', err);
     }
+
+    return {
+      totalRequests,
+      newRequests,
+      inProgressRequests,
+      resolvedRequests,
+      agentWorkload,
+    };
   }
 
   async getUnassignedRequests(limit = 50) {

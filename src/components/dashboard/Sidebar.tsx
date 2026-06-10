@@ -127,13 +127,15 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
   const navContent = (
     <div className="flex flex-col h-full">
       {/* Logo / Brand */}
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-gray-800">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600">
+      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-slate-100">
+        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md shadow-indigo-200/50">
           <Zap className="h-4 w-4 text-white" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-white tracking-wide">AI Router</h2>
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest">Admin Panel</p>
+          <h2 className="text-sm font-bold text-slate-800 tracking-tight">AI Router</h2>
+          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-medium">
+            {effectiveRole === 'ADMIN' ? 'Admin Panel' : effectiveRole === 'AGENT' ? 'Agent Panel' : 'Dashboard'}
+          </p>
         </div>
       </div>
 
@@ -143,7 +145,7 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
           <div key={group.label} className="mb-3">
             <button
               onClick={() => toggleGroup(group.label)}
-              className="flex items-center justify-between w-full px-2 py-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-400 transition-colors"
+              className="flex items-center justify-between w-full px-2 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider hover:text-slate-600 transition-colors"
             >
               {group.label}
               <ChevronDown
@@ -164,13 +166,16 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
                       className={clsx(
-                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
                         active
-                          ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                          : 'text-gray-400 hover:bg-gray-800/60 hover:text-gray-200 border border-transparent',
+                          ? 'bg-indigo-50 text-indigo-700 shadow-sm'
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700',
                       )}
                     >
-                      <span className={clsx(active ? 'text-indigo-400' : 'text-gray-500')}>
+                      <span className={clsx(
+                        'flex items-center justify-center w-7 h-7 rounded-lg transition-colors',
+                        active ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400'
+                      )}>
                         {item.icon}
                       </span>
                       {item.name}
@@ -180,7 +185,7 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
                         </span>
                       )}
                       {active && item.href !== '/dashboard/admin' && (
-                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500" />
                       )}
                     </Link>
                   );
@@ -192,23 +197,23 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
       </nav>
 
       {/* User area */}
-      <div className="border-t border-gray-800 px-4 py-3">
+      <div className="border-t border-slate-100 px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-indigo-200/50">
             {(sessionUser?.name ?? effectiveRole).charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-200 truncate">
+            <p className="text-sm font-semibold text-slate-700 truncate">
               {sessionUser?.name ?? (effectiveRole === 'ADMIN' ? 'Administrator' : effectiveRole === 'AGENT' ? 'Agent' : 'User')}
             </p>
-            <p className="text-xs text-gray-500 truncate">
+            <p className="text-xs text-slate-400 truncate">
               {sessionUser?.email ?? effectiveRole}
             </p>
           </div>
           <button
             type="button"
             onClick={handleLogout}
-            className="p-1.5 rounded-md text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+            className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
             aria-label="Log out"
           >
             <LogOut className="h-4 w-4" />
@@ -223,7 +228,7 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
       {/* Mobile hamburger button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-lg bg-gray-900 text-white shadow-lg"
+        className="fixed top-4 left-4 z-50 md:hidden p-2.5 rounded-xl bg-white text-slate-600 shadow-lg shadow-slate-200/50 border border-slate-100 hover:bg-slate-50 transition-colors"
         aria-label="Open menu"
       >
         <Menu className="h-5 w-5" />
@@ -232,7 +237,7 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -240,13 +245,13 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
       {/* Mobile sidebar */}
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-gray-950 transform transition-transform duration-300 ease-in-out md:hidden',
+          'fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl shadow-slate-300/30 transform transition-transform duration-300 ease-in-out md:hidden',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <button
           onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 p-1 text-gray-400 hover:text-white"
+          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
           aria-label="Close menu"
         >
           <X className="h-5 w-5" />
@@ -255,7 +260,7 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col w-64 min-h-screen bg-gray-950 border-r border-gray-800/50">
+      <aside className="hidden md:flex md:flex-col w-72 min-h-screen bg-white border-r border-slate-100 shadow-sm">
         {navContent}
       </aside>
     </>

@@ -40,11 +40,11 @@ const STAT_CARDS = [
 ];
 
 export const DashboardStats = ({ stats: externalStats, loading: externalLoading, className }: DashboardStatsProps) => {
-  const { stats: internalStats, loading: internalLoading, error: internalError } = useDashboardStats();
   const isControlled = typeof externalStats !== 'undefined' || typeof externalLoading !== 'undefined';
-  const stats = isControlled ? externalStats ?? null : internalStats;
-  const loading = isControlled ? externalLoading ?? false : internalLoading;
-  const error = isControlled ? null : internalError;
+  const internal = useDashboardStats();
+  const stats = isControlled ? externalStats ?? null : internal.stats;
+  const loading = isControlled ? externalLoading ?? false : internal.loading;
+  const error = isControlled ? null : internal.error;
 
   const cards: StatCardProps[] = STAT_CARDS.map((card) => ({
     icon: card.icon,

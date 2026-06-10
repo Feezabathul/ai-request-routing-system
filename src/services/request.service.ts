@@ -3,7 +3,7 @@ import {
   RequestEventType,
   RequestStatus,
   type CustomerRequest,
-} from "@/generated/prisma/client";
+} from "@prisma/client";
 import { requestRepository } from "@/repositories/request.repository";
 import { broadcastAdminNotificationsUpdated } from "@/services/realtime.service";
 import {

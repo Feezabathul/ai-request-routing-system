@@ -1,4 +1,4 @@
-import { ClassificationLabel, type CustomerRequest } from '@/generated/prisma/client';
+import { ClassificationLabel, type CustomerRequest } from '@prisma/client';
 import { requestRepository } from '@/repositories/request.repository';
 import type {
   AdminNotificationItem,

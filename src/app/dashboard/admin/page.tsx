@@ -10,15 +10,11 @@ import {
   Plus,
   ArrowRight,
   Settings,
-  LayoutList,
-  Clock,
-  CheckCircle2,
-  UserCheck,
 } from 'lucide-react';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { AdminPageGuard } from '@/components/dashboard/AdminPageGuard';
 import { NotificationList } from '@/components/admin/notifications/NotificationList';
 import { useAdminNotifications } from '@/hooks/useAdminNotifications';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 type RequestStatus = 'Pending' | 'In Progress' | 'AI Processing' | 'Resolved' | 'Closed' | 'Open';
 type RequestPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
@@ -163,6 +159,7 @@ export default function AdminOverviewPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { data: notificationData, loading: notificationsLoading, error: notificationsError } =
     useAdminNotifications();
+  const { stats, loading: statsLoading, refresh: refreshStats } = useDashboardStats();
 
   const loadDashboardData = useCallback(() => {
     setData({
@@ -175,6 +172,11 @@ export default function AdminOverviewPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     loadDashboardData();
+    try {
+      await refreshStats();
+    } catch (err) {
+      console.error('Failed to refresh stats:', err);
+    }
     await new Promise((r) => setTimeout(r, 600));
     setIsRefreshing(false);
   };
@@ -196,49 +198,9 @@ export default function AdminOverviewPage() {
     };
   }, [loadDashboardData]);
 
-  const { stats, loading: statsLoading } = useDashboardStats();
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-
-  const statCards = [
-    {
-      label: 'Total',
-      description: 'All requests',
-      value: stats?.totalRequests ?? 0,
-      icon: <LayoutList className="h-5 w-5" />,
-      iconBg: 'bg-indigo-100',
-      iconColor: 'text-indigo-600',
-      valueBg: 'bg-indigo-600',
-    },
-    {
-      label: 'New Waiting',
-      description: 'Awaiting assignment',
-      value: stats?.newRequests ?? 0,
-      icon: <Clock className="h-5 w-5" />,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
-      valueBg: 'bg-amber-500',
-    },
-    {
-      label: 'Assigned',
-      description: 'Being handled',
-      value: stats?.inProgressRequests ?? 0,
-      icon: <UserCheck className="h-5 w-5" />,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      valueBg: 'bg-blue-600',
-    },
-    {
-      label: 'Resolved',
-      description: 'Completed requests',
-      value: stats?.resolvedRequests ?? 0,
-      icon: <CheckCircle2 className="h-5 w-5" />,
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-      valueBg: 'bg-emerald-600',
-    },
-  ];
 
   return (
     <AdminPageGuard>
@@ -274,36 +236,61 @@ export default function AdminOverviewPage() {
           />
 
           {/* ── Stat Cards ── */}
-          <section>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
-              Overview
-            </h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {statCards.map((card) => (
-                <div
-                  key={card.label}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className={`w-10 h-10 rounded-xl ${card.iconBg} flex items-center justify-center ${card.iconColor}`}>
-                      {card.icon}
-                    </div>
-                    {statsLoading ? (
-                      <div className="h-8 w-10 rounded-lg bg-slate-100 animate-pulse" />
-                    ) : (
-                      <span className={`text-2xl font-bold text-slate-900`}>
-                        {card.value}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">{card.label}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{card.description}</p>
-                  </div>
-                </div>
-              ))}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-slate-50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {statsLoading ? (
+                    <span className="inline-block w-8 h-8 rounded bg-slate-200 animate-pulse" />
+                  ) : (
+                    stats?.newRequests ?? 0
+                  )}
+                </span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">
+                  New Waiting
+                </span>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {statsLoading ? (
+                    <span className="inline-block w-8 h-8 rounded bg-slate-200 animate-pulse" />
+                  ) : (
+                    stats?.inProgressRequests ?? 0
+                  )}
+                </span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">
+                  Assigned
+                </span>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {statsLoading ? (
+                    <span className="inline-block w-8 h-8 rounded bg-slate-200 animate-pulse" />
+                  ) : (
+                    stats?.resolvedRequests ?? 0
+                  )}
+                </span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">
+                  Resolved
+                </span>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl py-6 px-4 flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {statsLoading ? (
+                    <span className="inline-block w-8 h-8 rounded bg-slate-200 animate-pulse" />
+                  ) : (
+                    stats?.totalRequests ?? 0
+                  )}
+                </span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">
+                  Total
+                </span>
+              </div>
             </div>
-          </section>
+          </div>
 
           {/* ── Quick Actions ── */}
           <section>

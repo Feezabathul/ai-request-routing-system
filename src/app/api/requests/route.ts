@@ -56,7 +56,11 @@ export async function GET(req: NextRequest) {
       take: parsed.take ?? 50,
       skip: parsed.skip ?? 0,
       orderBy: { createdAt: "desc" },
-      include: { assignedTo: true, createdBy: true },
+      include: { 
+        assignedTo: true, 
+        createdBy: true,
+        aiClassifications: { orderBy: { createdAt: "desc" }, take: 1 }
+      },
     });
 
     return jsonSuccess({ requests }, 200);

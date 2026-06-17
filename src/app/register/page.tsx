@@ -7,15 +7,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Check, X, Zap, Eye, EyeOff } from "lucide-react";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: 'CUSTOMER';
-  createdAt: string;
-}
-
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState<string>("");
@@ -29,7 +20,6 @@ export default function RegisterPage() {
 
   // Form validation
   const validateForm = (): boolean => {
-    // Check all fields are filled
     if (!name.trim()) {
       setError("Full name is required");
       return false;
@@ -38,7 +28,6 @@ export default function RegisterPage() {
       setError("Email is required");
       return false;
     }
-    // Validate email format
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address");
       return false;
@@ -47,8 +36,8 @@ export default function RegisterPage() {
       setError("Password is required");
       return false;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
       return false;
     }
     if (!confirmPassword) {
@@ -59,35 +48,6 @@ export default function RegisterPage() {
       setError("Passwords do not match");
       return false;
     }
-
-    // Check if email already exists (check users)
-    try {
-      const existingUsers = localStorage.getItem("users");
-      if (existingUsers) {
-        const users: User[] = JSON.parse(existingUsers);
-        if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-          setError("This email is already registered");
-          return false;
-        }
-      }
-    } catch (e) {
-      console.error("Error checking existing users:", e);
-    }
-
-    // Check if email is already used by an agent
-    try {
-      const existingAgents = localStorage.getItem("agents");
-      if (existingAgents) {
-        const agents: any[] = JSON.parse(existingAgents);
-        if (agents.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
-          setError("This email is already in use by an agent account");
-          return false;
-        }
-      }
-    } catch (e) {
-      console.error("Error checking existing agents:", e);
-    }
-
     return true;
   };
 
@@ -95,46 +55,30 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
-    // Create new user
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      password: password,
-      role: 'CUSTOMER',
-      createdAt: new Date().toISOString(),
-    };
-
     try {
-      // Get existing users
-      let users: User[] = [];
-      const existingUsers = localStorage.getItem("users");
-      if (existingUsers) {
-        users = JSON.parse(existingUsers);
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error?.message || 'Registration failed. Please try again.');
+        setLoading(false);
+        return;
       }
 
-      // Add new user
-      users.push(newUser);
-
-      // Save to localStorage
-      localStorage.setItem("users", JSON.stringify(users));
-
-      // Show success message
       setShowSuccess(true);
-
-      // Clear form
-      setName("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-
-      // Redirect after 1.5 seconds
       await new Promise((res) => setTimeout(res, 1500));
       setLoading(false);
       router.push("/login");

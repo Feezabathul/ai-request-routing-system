@@ -35,11 +35,11 @@ function Unauthorized({ role }: { role: UserRole }) {
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-center">
           <button
             type="button"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push(role === 'USER' ? '/dashboard/requests' : '/dashboard')}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
+            Go Back
           </button>
           <span className="text-xs text-gray-400">
             Current role: <strong className="text-gray-700">{role}</strong>

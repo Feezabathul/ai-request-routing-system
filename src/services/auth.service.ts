@@ -13,6 +13,8 @@ type UserWithPassword = {
   email: string;
   name: string;
   role: string;
+  department?: string | null;
+  status?: string | null;
   passwordHash?: string | null;
 };
 
@@ -63,6 +65,8 @@ const sanitizeUser = (user: UserWithPassword): SafeUser => ({
   email: user.email,
   name: user.name,
   role: user.role,
+  department: user.department ?? null,
+  status: user.status ?? null,
 });
 
 export const generateAuthCookie = (token: string): AuthResult["cookie"] => ({
@@ -139,6 +143,7 @@ export const registerUser = async (input: unknown): Promise<AuthResult> => {
       name: parsedInput.name,
       email: parsedInput.email,
       passwordHash: hashedPassword,
+      role: 'USER', // Register page creates Users. Agents are ONLY created via invite flow.
     } as never,
   })) as unknown as UserWithPassword;
 
@@ -167,6 +172,7 @@ export const loginUser = async (input: unknown): Promise<AuthResult> => {
 
   const user = (await prisma.user.findUnique({
     where: { email: parsedInput.email },
+    select: { id: true, email: true, name: true, role: true, department: true, status: true, passwordHash: true },
   })) as UserWithPassword | null;
 
   if (!user || !user.passwordHash) {
@@ -195,7 +201,7 @@ export const loginUser = async (input: unknown): Promise<AuthResult> => {
 export const getUserById = async (userId: string): Promise<SafeUser | null> => {
   const user = (await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, role: true },
+    select: { id: true, email: true, name: true, role: true, department: true, status: true },
   })) as SafeUser | null;
   return user;
 };

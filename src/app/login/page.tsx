@@ -5,23 +5,18 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { setUserRole, UserRole } from '@/lib/role';
-import { findAgentByCredentials, CURRENT_AGENT_KEY } from '@/lib/agents';
-import { setCurrentUser, clearCurrentUser } from '@/lib/current-user';
-import { AlertCircle, Zap, Brain, BarChart3, Shield, MessageSquare, Eye, EyeOff } from "lucide-react";
+import { setUserRole } from '@/lib/role';
+import { CURRENT_AGENT_KEY } from '@/lib/agents';
+import { setCurrentUser } from '@/lib/current-user';
+import { AlertCircle, Zap, Brain, BarChart3, Shield, MessageSquare, Eye, EyeOff, ChevronDown } from "lucide-react";
 
-interface StoredUser {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: 'CUSTOMER';
-}
+type RoleHint = '' | 'ADMIN' | 'AGENT' | 'USER';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [roleHint, setRoleHint] = useState<RoleHint>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [remember, setRemember] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -33,80 +28,62 @@ export default function LoginPage() {
     setError(null);
 
     const normalizedEmail = email.trim().toLowerCase();
-    let role: UserRole | null = null;
-    let routePath = '';
 
     try {
-      // 1. Check admin credentials
-      if (normalizedEmail === 'admin@gmail.com' && password === 'admin123') {
-        role = 'ADMIN';
-        routePath = '/dashboard/admin';
-        setCurrentUser({
-          id: 'admin-1',
-          name: 'Administrator',
-          email: 'admin@gmail.com',
-          role: 'ADMIN',
-        });
-      } else {
-        // 2. Check agents from localStorage
-        const agent = findAgentByCredentials(normalizedEmail, password);
-        if (agent) {
-          role = 'AGENT';
-          routePath = '/dashboard';
-          localStorage.setItem(CURRENT_AGENT_KEY, JSON.stringify(agent));
-          setCurrentUser({
-            id: agent.id,
-            name: agent.name,
-            email: agent.email,
-            role: 'AGENT',
-          });
-        }
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      });
 
-        // 3. If not agent, check registered users
-        if (!role) {
-          const storedUsers = localStorage.getItem('users');
-          if (storedUsers) {
-            const users: StoredUser[] = JSON.parse(storedUsers);
-            const user = users.find(
-              (u) => u.email === normalizedEmail && u.password === password
-            );
-            if (user) {
-              role = 'CUSTOMER';
-              routePath = '/dashboard';
-              setCurrentUser({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: 'CUSTOMER',
-              });
-            }
-          }
-        }
-      }
+      const responseData = await res.json();
 
-      // If no matching account found
-      if (!role) {
-        setError('Invalid email or password. Please check your credentials or register if you don\'t have an account.');
+      if (!res.ok || !responseData.success) {
+        setError(responseData.error?.message || 'Invalid email or password.');
         setLoading(false);
         return;
       }
 
-      // Set role and navigate
-      setUserRole(role);
-      if (role !== 'AGENT') {
+      const user = responseData.data.user;
+
+      // Validate role hint matches actual role (optional guard)
+      if (roleHint && user.role !== roleHint) {
+        setError(`This account is not a${roleHint === 'ADMIN' ? 'n Admin' : roleHint === 'AGENT' ? 'n Agent' : ' User'} account. Please select the correct role.`);
+        setLoading(false);
+        return;
+      }
+
+      setUserRole(user.role);
+      setCurrentUser(user);
+
+      if (user.role === 'AGENT') {
+        localStorage.setItem(CURRENT_AGENT_KEY, JSON.stringify(user));
+      } else {
         localStorage.removeItem(CURRENT_AGENT_KEY);
       }
-      if (role === 'ADMIN') {
-        localStorage.removeItem(CURRENT_AGENT_KEY);
+
+      let routePath = '/user/dashboard';
+      if (user.role === 'ADMIN' || user.role === 'MANAGER') {
+        routePath = '/admin/dashboard';
+      } else if (user.role === 'AGENT') {
+        routePath = '/agent/dashboard';
       }
       await new Promise((res) => setTimeout(res, 800));
       setLoading(false);
       router.push(routePath);
+
     } catch (e) {
       console.error('Login error:', e);
       setError('An error occurred during login. Please try again.');
       setLoading(false);
     }
+  };
+
+  const roleLabels: Record<RoleHint, string> = {
+    '': 'Select your role...',
+    'ADMIN': 'Admin',
+    'AGENT': 'Agent',
+    'USER': 'Customer / User',
   };
 
   const features = [
@@ -159,7 +136,7 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md shadow-indigo-200">
-              <Zap className="h-4.5 w-4.5 text-white" />
+              <Zap className="h-4 w-4 text-white" />
             </div>
             <span className="text-lg font-bold text-slate-800">AI Router</span>
           </div>
@@ -175,6 +152,34 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+
+            {/* Role selector */}
+            <div>
+              <label htmlFor="role-select" className="block text-sm font-medium text-slate-700 mb-1.5">
+                I am logging in as
+              </label>
+              <div className="relative">
+                <select
+                  id="role-select"
+                  value={roleHint}
+                  onChange={(e) => setRoleHint(e.target.value as RoleHint)}
+                  disabled={loading}
+                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 shadow-sm disabled:opacity-50 transition-all duration-200"
+                >
+                  <option value="">Select your role...</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="AGENT">Agent</option>
+                  <option value="USER">Customer / User</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              </div>
+              {roleHint === 'AGENT' && (
+                <p className="mt-1.5 text-xs text-amber-600 font-medium">
+                  Agents must be invited by an admin to access the system.
+                </p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
                 Email address
@@ -202,7 +207,7 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   required
                   placeholder="Enter your password"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}

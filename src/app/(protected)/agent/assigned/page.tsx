@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,6 +13,7 @@ import { PlusCircle, FileSearch } from 'lucide-react';
 import { getUserRole, UserRole } from '@/lib/role';
 import { getCurrentAgent } from '@/lib/agents';
 import { getCurrentUser, getRequestCreator } from '@/lib/current-user';
+import { formatAiCategoryLabel } from '@/lib/departments';
 
 interface Request {
   id: string;
@@ -49,21 +50,42 @@ export default function RequestsPage() {
   const [currentAgent, setCurrentAgent] = useState<CurrentAgent | null>(null);
   const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCurrentUser>>(null);
 
-  // Load requests from localStorage
+  // Load requests from API
   useEffect(() => {
-    const loadRequests = () => {
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("requests");
-        setData(stored ? JSON.parse(stored) : []);
+    const loadRequests = async () => {
+      try {
+        const res = await fetch('/api/requests');
+        if (res.ok) {
+          const data = await res.json();
+          const mappedRequests = (data.data?.requests || []).map((req: any) => ({
+            id: req.id,
+            title: req.subject,
+            createdById: req.createdById,
+            createdByName: req.createdBy?.name || req.customerName,
+            createdByEmail: req.createdBy?.email || req.customerEmail,
+            customerName: req.customerName,
+            customerEmail: req.customerEmail,
+            category: formatAiCategoryLabel(req.aiClassifications?.[0]?.label),
+            aiCategory: req.aiClassifications?.[0]?.label,
+            aiConfidence: req.aiClassifications?.[0]?.confidence ? Number(req.aiClassifications[0].confidence) * 100 : undefined,
+            priority: req.priority === 'LOW' ? 'Low' : req.priority === 'MEDIUM' ? 'Medium' : req.priority === 'HIGH' ? 'High' : req.priority === 'URGENT' ? 'Urgent' : req.priority,
+            status: req.status === 'OPEN' ? 'Pending' : req.status === 'IN_PROGRESS' ? 'In Progress' : req.status === 'WAITING_ON_CUSTOMER' ? 'AI Processing' : req.status === 'RESOLVED' ? 'Resolved' : req.status === 'CLOSED' ? 'Closed' : req.status,
+            assignedAgentId: req.assignedToId,
+            assignedAgentName: req.assignedTo?.name,
+            createdAt: req.createdAt,
+          }));
+          setData(mappedRequests);
+        }
+      } catch (err) {
+        console.error('Failed to fetch requests', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadRequests();
     
-    // Listen for storage changes from other tabs/windows
-    window.addEventListener('storage', loadRequests);
-    return () => window.removeEventListener('storage', loadRequests);
+    // Optional polling for real-time feel if needed, but not strictly necessary.
   }, []);
 
   useEffect(() => {
@@ -77,20 +99,15 @@ export default function RequestsPage() {
   }, []);
 
   const visibleData = (() => {
+    // USER only sees their own created requests
+    if (role === 'USER' && currentUser) {
+      return data.filter((request) => request.createdById === currentUser.id);
+    }
+    // AGENT only sees their assigned requests
     if (role === 'AGENT' && currentAgent) {
       return data.filter((request) => request.assignedAgentId === currentAgent.id);
     }
-    if (role === 'CUSTOMER' && currentUser) {
-      return data.filter((request) => {
-        if (request.createdById) {
-          return request.createdById === currentUser.id;
-        }
-        return (
-          request.createdByEmail?.toLowerCase() === currentUser.email.toLowerCase() ||
-          request.customerEmail?.toLowerCase() === currentUser.email.toLowerCase()
-        );
-      });
-    }
+    // ADMIN and MANAGER see all requests
     return data;
   })();
 
@@ -131,9 +148,9 @@ export default function RequestsPage() {
       header: 'AI Category',
       accessor: (row: Request) => (
         <div>
-          <span className="text-sm text-gray-800">{row.aiCategory ?? row.category}</span>
+          <span className="text-sm text-gray-800">{row.category}</span>
           {row.aiConfidence != null && (
-            <span className="ml-1 text-xs text-gray-500">({row.aiConfidence}%)</span>
+            <span className="ml-1 text-xs text-gray-500">({Math.round(row.aiConfidence)}%)</span>
           )}
         </div>
       ),
@@ -200,8 +217,6 @@ export default function RequestsPage() {
           <p className="text-lg text-gray-600 mb-2">
             {role === 'AGENT'
               ? 'No requests assigned to you yet'
-              : role === 'CUSTOMER'
-              ? 'You have not created any requests yet'
               : 'No requests found'}
           </p>
           {role !== 'AGENT' && (

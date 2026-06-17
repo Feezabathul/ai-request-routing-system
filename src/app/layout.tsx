@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "AI-powered customer request routing system with real-time updates, intelligent classification, and seamless team collaboration.",
 };
 
+import { Toaster } from 'react-hot-toast';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +29,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#f8fafc]">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#f8fafc]">
+        {children}
+        <Toaster position="bottom-right" />
+      </body>
     </html>
   );
 }

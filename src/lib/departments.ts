@@ -52,3 +52,16 @@ export function inferDepartmentFromRequest(request: RequestLike): Department {
 export function classifyRequestText(title: string, description: string): Department {
   return inferDepartmentFromRequest({ category: '', title, description });
 }
+
+export function formatAiCategoryLabel(label?: string | null): string {
+  if (!label) return 'Pending Classification';
+  switch (label.toUpperCase()) {
+    case 'BILLING': return 'Billing';
+    case 'TECHNICAL': return 'Technical Support';
+    case 'ACCOUNT': return 'Account Management';
+    case 'FEATURE_REQUEST': return 'Feature Request';
+    case 'GENERAL': return 'General Support';
+    case 'SUPPORT': return 'General Support';
+    default: return label; // Return the raw label if unknown, better than hiding it
+  }
+}

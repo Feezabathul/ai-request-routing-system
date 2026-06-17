@@ -56,38 +56,38 @@ export default function CreateRequestPage() {
 
     setClassifying(false);
 
-    const newRequest: StoredRequest = {
-      id: Date.now().toString(),
-      title: form.title.trim(),
-      createdById: currentUser.id,
-      createdByName: currentUser.name,
-      createdByEmail: currentUser.email,
-      customerName: currentUser.name,
-      customerEmail: currentUser.email,
-      description: form.description.trim(),
-      category: aiCategory,
-      aiCategory,
-      aiConfidence,
-      priority: "Medium",
-      status: "Pending",
-      assignedAgentId: undefined,
-      assignedAgentName: undefined,
-      assignedAt: undefined,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const res = await fetch('/api/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: form.title.trim(),
+          description: form.description.trim(),
+          customerName: currentUser.name,
+          customerEmail: currentUser.email,
+          createdById: currentUser.id,
+        }),
+      });
 
-    const requests = getRequests();
-    requests.push(newRequest);
-    saveRequests(requests);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error?.message || 'Failed to submit request');
+      }
 
-    setMessage(
-      `Request submitted as ${currentUser.name}. AI classified: ${aiCategory} (${aiConfidence}% confidence).`
-    );
+      setMessage(
+        `Request submitted as ${currentUser.name}.`
+      );
 
-    setTimeout(() => {
+      setTimeout(() => {
+        setLoading(false);
+        router.push("/dashboard/requests");
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message || "An error occurred while submitting.");
       setLoading(false);
-      router.push("/dashboard/requests");
-    }, 1800);
+    }
   };
 
   const handleCancel = () => {

@@ -54,7 +54,7 @@ export default function Home() {
             Sign In to Dashboard
           </a>
           <a
-            href="/dashboard"
+            href="/login"
             className="px-8 py-3.5 text-base font-semibold text-indigo-600 bg-white border-2 border-indigo-100 rounded-2xl shadow-sm hover:border-indigo-200 hover:bg-indigo-50/50 hover:-translate-y-0.5 transition-all duration-300"
           >
             Explore Dashboard

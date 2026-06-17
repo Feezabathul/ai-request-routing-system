@@ -15,6 +15,26 @@ enum UserRole {
   AGENT
   MANAGER
   ADMIN
+  USER
+}
+
+enum AgentStatus {
+  ONLINE
+  OFFLINE
+  BUSY
+  ON_LEAVE
+}
+
+enum InvitationStatus {
+  INVITED
+  ACCEPTED
+  EXPIRED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
 enum RequestStatus {
@@ -73,6 +93,8 @@ model User {
   name             String
   passwordHash     String
   role             UserRole          @default(AGENT)
+  department       String?
+  status           AgentStatus       @default(OFFLINE)
   createdRequests  CustomerRequest[] @relation("RequestCreatedBy")
   assignedRequests CustomerRequest[] @relation("RequestAssignedTo")
   authoredNotes    InternalNote[]
@@ -81,6 +103,7 @@ model User {
   updatedAt        DateTime          @updatedAt
 
   @@index([role])
+  @@index([status])
 }
 
 model CustomerRequest {
@@ -98,6 +121,8 @@ model CustomerRequest {
   assignedToId       String?            @db.Uuid
   createdBy          User               @relation("RequestCreatedBy", fields: [createdById], references: [id])
   assignedTo         User?              @relation("RequestAssignedTo", fields: [assignedToId], references: [id])
+  resolvedAt         DateTime?
+  resolutionNote     String?
   aiClassifications  AIClassification[]
   internalNotes      InternalNote[]
   requestEvents      RequestEvent[]
@@ -156,4 +181,31 @@ model RequestEvent {
   @@index([requestId, createdAt])
   @@index([eventType, createdAt])
   @@index([actorId])
+}
+
+model AgentInvitation {
+  id        String           @id @default(uuid()) @db.Uuid
+  email     String           @unique
+  token     String           @unique
+  status    InvitationStatus @default(INVITED)
+  createdAt DateTime         @default(now())
+  expiresAt DateTime
+
+  @@index([email])
+  @@index([token])
+  @@index([status])
+}
+
+model CustomerNotification {
+  id            String             @id @default(uuid()) @db.Uuid
+  customerEmail String
+  requestId     String             @db.Uuid
+  message       String
+  status        NotificationStatus @default(PENDING)
+  sentAt        DateTime?
+  createdAt     DateTime           @default(now())
+
+  @@index([requestId])
+  @@index([customerEmail])
+  @@index([status])
 }

@@ -115,7 +115,7 @@ const quickActions = [
   {
     label: 'Add Agent',
     description: 'Onboard a new support agent',
-    href: '/dashboard/agents',
+    href: '/admin/agents',
     icon: <Bot className="h-5 w-5" />,
     gradient: 'from-indigo-500 to-indigo-600',
     bg: 'bg-indigo-50 hover:bg-indigo-100',
@@ -125,7 +125,7 @@ const quickActions = [
   {
     label: 'Manage Users',
     description: 'View and manage user accounts',
-    href: '/dashboard/users',
+    href: '/admin/users',
     icon: <Users className="h-5 w-5" />,
     gradient: 'from-violet-500 to-violet-600',
     bg: 'bg-violet-50 hover:bg-violet-100',
@@ -135,7 +135,7 @@ const quickActions = [
   {
     label: 'View Requests',
     description: 'Browse all customer requests',
-    href: '/dashboard/requests',
+    href: '/admin/requests',
     icon: <FileText className="h-5 w-5" />,
     gradient: 'from-emerald-500 to-emerald-600',
     bg: 'bg-emerald-50 hover:bg-emerald-100',
@@ -145,7 +145,7 @@ const quickActions = [
   {
     label: 'Settings',
     description: 'Configure system settings',
-    href: '/dashboard/settings',
+    href: '/admin/settings',
     icon: <Settings className="h-5 w-5" />,
     gradient: 'from-amber-500 to-amber-600',
     bg: 'bg-amber-50 hover:bg-amber-100',
@@ -168,6 +168,40 @@ export default function AdminOverviewPage() {
       users: readStoredArray<StoredUser>('users'),
     });
   }, []);
+
+
+  // State to track selected agent for each request
+  const [selectedAgentMap, setSelectedAgentMap] = useState<Record<string, string>>({});
+
+  const handleAssignRequest = async (requestId: string) => {
+    const agentId = selectedAgentMap[requestId];
+    if (!agentId) {
+      alert('Please select an agent to assign.');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/requests/${requestId}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId }),
+      });
+      if (!res.ok) throw new Error('Assign failed');
+      // Refresh dashboard data after successful assignment
+      // Re-fetch requests from API to sync localStorage
+      const freshRes = await fetch('/api/requests');
+      if (freshRes.ok) {
+        const data = await freshRes.json();
+        // Assuming API returns { requests: [...] }
+        if (data.requests) {
+          localStorage.setItem('requests', JSON.stringify(data.requests));
+        }
+      }
+      loadDashboardData();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to assign agent.');
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -335,7 +369,7 @@ export default function AdminOverviewPage() {
                   </div>
                 </div>
                 <Link
-                  href="/dashboard/requests"
+                  href="/admin/requests"
                   className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
                   View all <ArrowRight className="h-3 w-3" />
@@ -356,37 +390,61 @@ export default function AdminOverviewPage() {
                     const sc = statusConfig[req.status ?? 'Open'];
                     const pc = req.priority ? priorityConfig[req.priority] : null;
                     return (
-                      <Link
+                      <div
                         key={req.id}
-                        href={`/dashboard/requests/${req.id}`}
-                        className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors group"
+                        className="flex flex-col px-5 py-3.5 hover:bg-slate-50 transition-colors group"
                       >
-                        {/* Avatar */}
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${getAvatarColor(req.customerName ?? 'U')}`}>
-                          {getInitials(req.customerName ?? 'Unknown')}
-                        </div>
-                        {/* Info */}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-                            {req.title || 'Untitled Request'}
-                          </p>
-                          <p className="text-xs text-slate-400 truncate">
-                            {req.customerName ?? '—'} · {formatDate(req.createdAt)}
-                          </p>
-                        </div>
-                        {/* Badges */}
-                        <div className="flex-shrink-0 flex items-center gap-1.5">
-                          {pc && (
-                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${pc.className}`}>
-                              {pc.label}
+                        <div className="flex items-center gap-3">
+                          {/* Avatar */}
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${getAvatarColor(req.customerName ?? 'U')}`}>
+                            {getInitials(req.customerName ?? 'Unknown')}
+                          </div>
+                          {/* Info */}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+                              {req.title || 'Untitled Request'}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate">
+                              {req.customerName ?? '—'} · {formatDate(req.createdAt)}
+                            </p>
+                          </div>
+                          {/* Badges */}
+                          <div className="flex-shrink-0 flex items-center gap-1.5">
+                            {pc && (
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${pc.className}`}>
+                                {pc.label}
+                              </span>
+                            )}
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${sc.className}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                              {req.status ?? 'Open'}
                             </span>
-                          )}
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${sc.className}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                            {req.status ?? 'Open'}
-                          </span>
+                          </div>
                         </div>
-                      </Link>
+                        {/* Assignment UI */}
+                        <div className="flex items-center gap-2 mt-2 ml-11">
+                          <select
+                            value={selectedAgentMap[req.id] || ''}
+                            onChange={(e) => setSelectedAgentMap(prev => ({ ...prev, [req.id]: e.target.value }))}
+                            className="rounded border-gray-300 text-xs py-1"
+                          >
+                            <option value="">Select agent</option>
+                            {data.agents
+                              .filter((a) => a.status !== 'INACTIVE')
+                              .map((agent) => (
+                                <option key={agent.id} value={agent.id}>
+                                  {agent.name}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            onClick={() => handleAssignRequest(req.id)}
+                            className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                          >
+                            Assign
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -408,7 +466,7 @@ export default function AdminOverviewPage() {
                   </div>
                 </div>
                 <Link
-                  href="/dashboard/agents"
+                  href="/admin/agents"
                   className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
                   Manage <ArrowRight className="h-3 w-3" />
@@ -423,7 +481,7 @@ export default function AdminOverviewPage() {
                   <p className="text-sm font-medium text-slate-600">No agents yet</p>
                   <p className="text-xs text-slate-400 mt-1">Add your first support agent to get started</p>
                   <Link
-                    href="/dashboard/agents"
+                    href="/admin/agents"
                     className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />

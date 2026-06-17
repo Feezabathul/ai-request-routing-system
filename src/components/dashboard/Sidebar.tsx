@@ -26,15 +26,31 @@ interface NavItemType {
   href: string;
   icon: React.ReactNode;
   adminOnly?: boolean;
+  agentOnly?: boolean;
+  userOnly?: boolean;
 }
 
 const navItems: NavItemType[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
-  { name: 'Requests', href: '/dashboard/requests', icon: <FileText className="h-5 w-5" /> },
-  { name: 'Admin Overview', href: '/dashboard/admin', icon: <ShieldCheck className="h-5 w-5" />, adminOnly: true },
-  { name: 'Agents', href: '/dashboard/agents', icon: <Bot className="h-5 w-5" />, adminOnly: true },
-  { name: 'Users', href: '/dashboard/users', icon: <Users className="h-5 w-5" />, adminOnly: true },
-  { name: 'Settings', href: '/dashboard/settings', icon: <Settings className="h-5 w-5" />, adminOnly: true },
+  // Admin Routes
+  { name: 'Admin Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, adminOnly: true },
+  { name: 'Requests', href: '/admin/requests', icon: <FileText className="h-5 w-5" />, adminOnly: true },
+  { name: 'Agents', href: '/admin/agents', icon: <Bot className="h-5 w-5" />, adminOnly: true },
+  { name: 'Users', href: '/admin/users', icon: <Users className="h-5 w-5" />, adminOnly: true },
+  { name: 'Settings', href: '/admin/settings', icon: <Settings className="h-5 w-5" />, adminOnly: true },
+
+  // Agent Routes
+  { name: 'Agent Dashboard', href: '/agent/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, agentOnly: true },
+  { name: 'Agent Queue', href: '/agent/queue', icon: <FileText className="h-5 w-5" />, agentOnly: true },
+  { name: 'Assigned', href: '/agent/assigned', icon: <ShieldCheck className="h-5 w-5" />, agentOnly: true },
+  { name: 'Resolved', href: '/agent/resolved', icon: <ShieldCheck className="h-5 w-5" />, agentOnly: true },
+  { name: 'Profile', href: '/agent/profile', icon: <Settings className="h-5 w-5" />, agentOnly: true },
+
+  // User Routes
+  { name: 'User Dashboard', href: '/user/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, userOnly: true },
+  { name: 'My Requests', href: '/user/requests', icon: <FileText className="h-5 w-5" />, userOnly: true },
+  { name: 'Submit Request', href: '/user/create-request', icon: <FileText className="h-5 w-5" />, userOnly: true },
+  { name: 'Notifications', href: '/user/notifications', icon: <FileText className="h-5 w-5" />, userOnly: true },
+  { name: 'Profile', href: '/user/profile', icon: <Settings className="h-5 w-5" />, userOnly: true },
 ];
 
 export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
@@ -86,12 +102,13 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
   const effectiveRole = storedRole;
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(href);
   };
 
   const filteredItems = navItems.filter(item => {
     if (item.adminOnly && effectiveRole !== 'ADMIN') return false;
+    if (item.agentOnly && effectiveRole !== 'AGENT') return false;
+    if (item.userOnly && effectiveRole !== 'USER') return false;
     return true;
   });
 
@@ -118,14 +135,16 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
         ) : (
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-200/50 flex-shrink-0 text-sm">
-              AP
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-bold text-slate-800 tracking-tight leading-tight truncate">Admin Portal</h2>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-medium mt-0.5 truncate">
-                Platform Control
-              </p>
-            </div>
+                {effectiveRole === 'ADMIN' ? 'AD' : effectiveRole === 'AGENT' ? 'AG' : 'US'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-bold text-slate-800 tracking-tight leading-tight truncate">
+                  {effectiveRole === 'ADMIN' ? 'Admin Portal' : effectiveRole === 'AGENT' ? 'Agent Portal' : 'User Portal'}
+                </h2>
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-medium mt-0.5 truncate">
+                  {effectiveRole === 'ADMIN' ? 'Platform Control' : effectiveRole === 'AGENT' ? 'Agent Workspace' : 'User Dashboard'}
+                </p>
+              </div>
           </div>
         )}
 
@@ -169,13 +188,12 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
                     
                     <div className="flex flex-1 items-center justify-between ml-3 overflow-hidden transition-all duration-300 opacity-100">
                       <span className="whitespace-nowrap overflow-hidden text-ellipsis text-sm font-medium">{item.name}</span>
-                      
-                      {item.href === '/dashboard/admin' && effectiveRole === 'ADMIN' && (
-                        <span className="ml-auto flex-shrink-0">
-                          <NotificationBadge count={pendingNotifications} label="pending requests" />
-                        </span>
-                      )}
-                      {active && item.href !== '/dashboard/admin' && (
+                      {item.href === '/admin/dashboard' && effectiveRole === 'ADMIN' && (
+                         <span className="ml-auto flex-shrink-0">
+                           <NotificationBadge count={pendingNotifications} label="pending requests" />
+                         </span>
+                       )}
+                      {active && item.href !== '/admin/dashboard' && (
                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
                       )}
                     </div>

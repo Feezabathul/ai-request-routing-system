@@ -4,6 +4,7 @@ import {
   RequestEventType,
   RequestPriority,
   RequestStatus,
+  ClassificationLabel,
   type CustomerRequest,
   type RequestEvent,
 } from "@prisma/client";
@@ -78,6 +79,7 @@ export class RequestRepository {
       include: {
         assignedTo: true,
         createdBy: true,
+        aiClassifications: { orderBy: { createdAt: "desc" }, take: 1 },
       },
     }) as unknown as CustomerRequest[];
   }
@@ -118,6 +120,17 @@ export class RequestRepository {
         eventType: data.eventType,
         description: data.description,
         metadata: data.metadata as never,
+      },
+    });
+  }
+
+  async createAiClassification(requestId: string, label: ClassificationLabel, confidence: number) {
+    return prisma.aIClassification.create({
+      data: {
+        requestId,
+        label,
+        confidence,
+        modelVersion: "mock-v1",
       },
     });
   }

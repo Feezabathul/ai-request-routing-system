@@ -2,10 +2,12 @@ import {
   AIProcessingStatus,
   RequestEventType,
   RequestStatus,
+  ClassificationLabel,
   type CustomerRequest,
 } from "@prisma/client";
 import { requestRepository } from "@/repositories/request.repository";
 import { broadcastAdminNotificationsUpdated } from "@/services/realtime.service";
+import { classifyRequestWithAI } from "@/lib/ai-classification";
 import {
   DEFAULT_AI_PROCESSING_STATUS,
   assignAgentSchema,
@@ -30,10 +32,43 @@ export class RequestServiceError extends Error {
   }
 }
 
+const departmentToLabel: Record<string, ClassificationLabel> = {
+  'Billing': 'BILLING',
+  'Technical Support': 'TECHNICAL',
+  'Account Management': 'ACCOUNT',
+  'General Support': 'GENERAL',
+  'Feature Request': 'FEATURE_REQUEST',
+};
+
 const enqueueAIClassification = async (requestId: string) => {
-  // Placeholder: integrate BullMQ here (non-blocking).
-  // This function must NOT throw in a way that blocks request creation.
-  void requestId;
+  // Simulate an asynchronous job processing the AI Classification
+  setTimeout(async () => {
+    try {
+      const request = await requestRepository.getRequestById(requestId);
+      if (!request) return;
+
+      const result = classifyRequestWithAI(request.subject, request.message || '');
+      const label = departmentToLabel[result.aiCategory] || 'GENERAL';
+
+      // Insert AI classification
+      await requestRepository.createAiClassification(requestId, label, result.aiConfidence / 100);
+
+      // Status goes to OPEN, unless it was closed/resolved already.
+      if (request.status === 'WAITING_ON_CUSTOMER') { // Wait state for AI processing
+         await requestRepository.updateRequestStatus(requestId, 'OPEN');
+      }
+      await requestRepository.updateAIProcessingStatus(requestId, 'COMPLETED');
+      
+      await requestRepository.createRequestEvent({
+        requestId,
+        eventType: 'AI_CLASSIFIED',
+      });
+      
+    } catch (e) {
+      console.error('AI classification failed', e);
+      await requestRepository.updateAIProcessingStatus(requestId, 'FAILED');
+    }
+  }, 1500); // 1.5 seconds delay for AI mock
 };
 
 export const createRequest = async (input: unknown): Promise<CustomerRequest> => {

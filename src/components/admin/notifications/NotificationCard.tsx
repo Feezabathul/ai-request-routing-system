@@ -75,13 +75,13 @@ export function NotificationCard({ notification }: NotificationCardProps) {
 
         <div className="flex shrink-0 flex-col gap-2 sm:w-40">
           <Link
-            href={`/dashboard/requests/${notification.id}`}
+            href={`/admin/request/${notification.id}`}
             className="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
             View Request
           </Link>
           <Link
-            href={`/dashboard/requests/${notification.id}?assign=1`}
+            href={`/admin/request/${notification.id}?assign=1`}
             className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
           >
             Assign Agent

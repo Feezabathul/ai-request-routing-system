@@ -49,6 +49,7 @@ export class AuthServiceError extends Error {
     super(message);
     this.name = "AuthServiceError";
     this.statusCode = statusCode;
+    Object.setPrototypeOf(this, AuthServiceError.prototype);
   }
 }
 

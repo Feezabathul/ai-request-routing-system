@@ -32,20 +32,29 @@ const jsonError = (message: string, status = 400, code = "BAD_REQUEST") => {
 };
 
 const handleControllerError = (err: unknown) => {
-  if (err instanceof AuthServiceError) {
+  console.error("Auth Controller Error:", err);
+
+  if (
+    err instanceof AuthServiceError ||
+    (err && typeof err === "object" && ("statusCode" in err || (err as { name?: string }).name === "AuthServiceError"))
+  ) {
+    const authErr = err as { message?: string; statusCode?: number };
+    const statusCode = authErr.statusCode || 400;
+    const message = authErr.message || "Authentication error";
     const code =
-      err.statusCode === 401
+      statusCode === 401
         ? "UNAUTHORIZED"
-        : err.statusCode === 403
+        : statusCode === 403
           ? "FORBIDDEN"
-          : err.statusCode === 409
+          : statusCode === 409
             ? "CONFLICT"
             : "BAD_REQUEST";
-    return jsonError(err.message, err.statusCode, code);
+    return jsonError(message, statusCode, code);
   }
 
-  if (err instanceof ZodError) {
-    const message = err.issues[0]?.message ?? "Invalid request";
+  if (err instanceof ZodError || (err && typeof err === "object" && (err as { name?: string }).name === "ZodError")) {
+    const zodErr = err as ZodError;
+    const message = zodErr.issues?.[0]?.message ?? "Invalid request";
     return jsonError(message, 400, "VALIDATION_ERROR");
   }
 

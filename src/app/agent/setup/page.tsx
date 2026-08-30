@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Zap, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { DEPARTMENTS, type Department } from '@/lib/departments';
 
-export default function AgentSetupPage() {
+function AgentSetupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -238,5 +238,22 @@ export default function AgentSetupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AgentSetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="flex flex-col items-center">
+            <Zap className="h-8 w-8 text-indigo-500 animate-pulse mb-4" />
+            <p className="text-sm text-slate-500">Loading setup page...</p>
+          </div>
+        </div>
+      }
+    >
+      <AgentSetupForm />
+    </Suspense>
   );
 }

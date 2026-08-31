@@ -9,12 +9,13 @@ import { setUserRole } from '@/lib/role';
 import { CURRENT_AGENT_KEY } from '@/lib/agents';
 import { setCurrentUser } from '@/lib/current-user';
 import { AlertCircle, Zap, Brain, BarChart3, Shield, MessageSquare, Eye, EyeOff, ChevronDown } from "lucide-react";
-
+import { Inter } from 'next/font/google';
+const inter = Inter({ subsets: ['latin'] });
 type RoleHint = '' | 'ADMIN' | 'AGENT' | 'USER';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState<string>("");
+  const [email, setEmail] = useState<string>("admin@example.com");
   const [password, setPassword] = useState<string>("");
   const [roleHint, setRoleHint] = useState<RoleHint>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -95,7 +96,7 @@ export default function LoginPage() {
   ];
 
   return (
-    <section className="min-h-screen flex flex-col lg:flex-row bg-slate-50">
+    <section className={`${inter.className} min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100`}>
       {/* Left side – info panel */}
       <div className="hidden lg:flex flex-1 flex-col justify-center items-start px-16 py-12 bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 relative overflow-hidden">
         {/* Decorative shapes */}
@@ -132,7 +133,7 @@ export default function LoginPage() {
 
       {/* Right side – login card */}
       <div className="flex flex-1 items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-8 space-y-6">
           {/* Mobile logo */}
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md shadow-indigo-200">
@@ -181,48 +182,49 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Email address
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                placeholder="you@example.com"
-                autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all duration-200 disabled:opacity-50 shadow-sm"
-              />
-            </div>
-
-            <div className="relative">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-11 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all duration-200 disabled:opacity-50 shadow-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  disabled={loading}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 focus:outline-none disabled:opacity-50 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Email address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 shadow-sm disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 shadow-sm disabled:opacity-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                      disabled={loading}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -239,12 +241,13 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
             </div>
+          </div>
 
             <div>
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 disabled:opacity-60 shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50"
+                className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 disabled:opacity-60 shadow-md shadow-teal-200/50 hover:shadow-lg hover:shadow-teal-300/50"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -267,6 +270,7 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
     </section>
   );
 }

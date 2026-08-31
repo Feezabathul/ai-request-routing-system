@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AI Request Router — Smart Customer Support",
   description: "AI-powered customer request routing system with real-time updates, intelligent classification, and seamless team collaboration.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 import { Toaster } from 'react-hot-toast';

@@ -99,6 +99,7 @@ model User {
   assignedRequests CustomerRequest[] @relation("RequestAssignedTo")
   authoredNotes    InternalNote[]
   requestEvents    RequestEvent[]
+  notifications    AgentNotification[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -126,6 +127,7 @@ model CustomerRequest {
   aiClassifications  AIClassification[]
   internalNotes      InternalNote[]
   requestEvents      RequestEvent[]
+  agentNotifications AgentNotification[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 

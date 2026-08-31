@@ -20,14 +20,14 @@ const isServiceClientConfigured = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_
 
 if (process.env.NODE_ENV === 'development') {
   if (!isBrowserClientConfigured) {
-    console.warn(
-      'Supabase browser client is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.',
-    );
+    // console.warn(
+    //   'Supabase browser client is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.',
+    // );
   }
   if (!isServiceClientConfigured) {
-    console.warn(
-      'Supabase service client is not configured. Set SUPABASE_SERVICE_ROLE_KEY in .env.local.',
-    );
+    // console.warn(
+    //   'Supabase service client is not configured. Set SUPABASE_SERVICE_ROLE_KEY in .env.local.',
+    // );
   }
 }
 

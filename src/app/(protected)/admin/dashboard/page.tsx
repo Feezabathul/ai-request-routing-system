@@ -5,15 +5,13 @@ import Link from 'next/link';
 import {
   Users,
   Bot,
-  RefreshCw,
   FileText,
   Plus,
   ArrowRight,
   Settings,
 } from 'lucide-react';
 import { AdminPageGuard } from '@/components/dashboard/AdminPageGuard';
-import { NotificationList } from '@/components/admin/notifications/NotificationList';
-import { useAdminNotifications } from '@/hooks/useAdminNotifications';
+// Notification imports removed as they are no longer needed
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 type RequestStatus = 'Pending' | 'In Progress' | 'AI Processing' | 'Resolved' | 'Closed' | 'Open';
@@ -156,9 +154,8 @@ const quickActions = [
 
 export default function AdminOverviewPage() {
   const [data, setData] = useState<DashboardData>(emptyDashboardData);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const { data: notificationData, loading: notificationsLoading, error: notificationsError } =
-    useAdminNotifications();
+
+  // Admin notifications hook removed as they are no longer needed
   const { stats, loading: statsLoading, refresh: refreshStats } = useDashboardStats();
 
   const loadDashboardData = useCallback(() => {
@@ -203,17 +200,6 @@ export default function AdminOverviewPage() {
     }
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    loadDashboardData();
-    try {
-      await refreshStats();
-    } catch (err) {
-      console.error('Failed to refresh stats:', err);
-    }
-    await new Promise((r) => setTimeout(r, 600));
-    setIsRefreshing(false);
-  };
 
   useEffect(() => {
     const t = window.setTimeout(loadDashboardData, 0);
@@ -233,8 +219,8 @@ export default function AdminOverviewPage() {
   }, [loadDashboardData]);
 
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+// const hour = new Date().getHours();
+// const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <AdminPageGuard>
@@ -243,31 +229,19 @@ export default function AdminOverviewPage() {
         <div className="bg-white border-b border-slate-200 px-6 py-5">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-indigo-600 mb-0.5">{greeting} 👋</p>
+
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Admin Dashboard</h1>
               <p className="text-sm text-slate-500 mt-0.5">
                 Manage your team, requests, and system settings
               </p>
             </div>
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 shadow-sm disabled:opacity-60"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
+
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-          {/* ── Notifications ── */}
-          <NotificationList
-            data={notificationData}
-            loading={notificationsLoading}
-            error={notificationsError}
-          />
+
 
           {/* ── Stat Cards ── */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -351,108 +325,8 @@ export default function AdminOverviewPage() {
             </div>
           </section>
 
-          {/* ── Requests & Agents tables ── */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-            {/* Requests */}
-            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                    <FileText className="h-4 w-4 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-slate-900">Recent Requests</h2>
-                    <p className="text-xs text-slate-400">
-                      {data.requests.length} total
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  href="/admin/requests"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-                >
-                  View all <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-
-              {data.requests.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-14 px-6 text-center">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                    <FileText className="h-6 w-6 text-slate-300" />
-                  </div>
-                  <p className="text-sm font-medium text-slate-600">No requests yet</p>
-                  <p className="text-xs text-slate-400 mt-1">Customer requests will appear here</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-50">
-                  {data.requests.slice(0, 6).map((req) => {
-                    const sc = statusConfig[req.status ?? 'Open'];
-                    const pc = req.priority ? priorityConfig[req.priority] : null;
-                    return (
-                      <div
-                        key={req.id}
-                        className="flex flex-col px-5 py-3.5 hover:bg-slate-50 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          {/* Avatar */}
-                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${getAvatarColor(req.customerName ?? 'U')}`}>
-                            {getInitials(req.customerName ?? 'Unknown')}
-                          </div>
-                          {/* Info */}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-                              {req.title || 'Untitled Request'}
-                            </p>
-                            <p className="text-xs text-slate-400 truncate">
-                              {req.customerName ?? '—'} · {formatDate(req.createdAt)}
-                            </p>
-                          </div>
-                          {/* Badges */}
-                          <div className="flex-shrink-0 flex items-center gap-1.5">
-                            {pc && (
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${pc.className}`}>
-                                {pc.label}
-                              </span>
-                            )}
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${sc.className}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                              {req.status ?? 'Open'}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Assignment UI */}
-                        <div className="flex items-center gap-2 mt-2 ml-11">
-                          <select
-                            value={selectedAgentMap[req.id] || ''}
-                            onChange={(e) => setSelectedAgentMap(prev => ({ ...prev, [req.id]: e.target.value }))}
-                            className="rounded border-gray-300 text-xs py-1"
-                          >
-                            <option value="">Select agent</option>
-                            {data.agents
-                              .filter((a) => a.status !== 'INACTIVE')
-                              .map((agent) => (
-                                <option key={agent.id} value={agent.id}>
-                                  {agent.name}
-                                </option>
-                              ))}
-                          </select>
-                          <button
-                            onClick={() => handleAssignRequest(req.id)}
-                            className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                          >
-                            Assign
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-
-            {/* Agents */}
-            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* ── Agents table ── */}
+          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
@@ -521,7 +395,7 @@ export default function AdminOverviewPage() {
           </div>
 
         </div>
-      </div>
+      
     </AdminPageGuard>
   );
 }

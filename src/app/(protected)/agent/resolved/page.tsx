@@ -1,15 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { RequestsHeader } from '@/components/requests/RequestsHeader';
 import { SearchBar } from '@/components/requests/SearchBar';
 import { RequestsFilters } from '@/components/requests/RequestsFilters';
 import { Table } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle, FileSearch } from 'lucide-react';
+import { FileSearch } from 'lucide-react';
 import { getUserRole, UserRole } from '@/lib/role';
 import { getCurrentAgent } from '@/lib/agents';
 import { getCurrentUser, getRequestCreator } from '@/lib/current-user';
@@ -41,7 +39,6 @@ interface CurrentAgent {
 }
 
 export default function RequestsPage() {
-  const router = useRouter();
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ status: '', priority: '', category: '', agent: '' });
   const [loading, setLoading] = useState(true);
@@ -84,8 +81,6 @@ export default function RequestsPage() {
     };
 
     loadRequests();
-    
-    // Optional polling for real-time feel if needed, but not strictly necessary.
   }, []);
 
   useEffect(() => {
@@ -203,7 +198,7 @@ export default function RequestsPage() {
   ];
   return (
     <section className="max-w-7xl mx-auto p-4">
-      <RequestsHeader onCreate={() => router.push('/dashboard/requests/create')} />
+      <RequestsHeader />
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
         <SearchBar query={query} onChange={setQuery} />
       </div>
@@ -219,18 +214,11 @@ export default function RequestsPage() {
               ? 'No requests assigned to you yet'
               : 'No requests found'}
           </p>
-          {role !== 'AGENT' && (
-            <Button onClick={() => router.push('/dashboard/requests/create')} variant="primary" className="flex items-center gap-2">
-              <PlusCircle className="w-4 h-4" />
-              Create Request
-            </Button>
-          )}
         </div>
       ) : (
         <Table columns={columns} data={filtered} />
       )}
     </section>
   );
-
 }
 

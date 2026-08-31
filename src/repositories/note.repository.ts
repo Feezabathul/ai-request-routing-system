@@ -1,5 +1,6 @@
 // src/repositories/note.repository.ts
 
+import "server-only";
 import { prisma } from "../lib/prisma";
 import { InternalNote } from "@prisma/client";
 

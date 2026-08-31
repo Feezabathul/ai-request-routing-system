@@ -1,25 +1,27 @@
 import { z } from "zod";
 
-import { AIProcessingStatus, RequestPriority, RequestStatus } from "@prisma/client";
+export const RequestPriorityEnum = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]);
+export const RequestStatusEnum = z.enum(["OPEN", "IN_PROGRESS", "WAITING_ON_CUSTOMER", "RESOLVED", "CLOSED"]);
+export const AIProcessingStatusEnum = z.enum(["PENDING", "QUEUED", "PROCESSING", "COMPLETED", "FAILED"]);
 
 export const createRequestSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title is too long"),
   description: z.string().trim().min(1, "Description is required").max(10_000, "Description is too long"),
 
   customerName: z.string().trim().min(1, "Customer name is required").max(200),
-  customerEmail: z.email("Please provide a valid customer email").transform((v) => v.toLowerCase().trim()),
+  customerEmail: z.string().email("Please provide a valid customer email").transform((v) => v.toLowerCase().trim()),
 
   createdById: z.string().uuid("createdById must be a UUID"),
 
-  priority: z.nativeEnum(RequestPriority).optional(),
-  status: z.nativeEnum(RequestStatus).optional(),
+  priority: RequestPriorityEnum.optional(),
+  status: RequestStatusEnum.optional(),
 
   // For safe retries from clients; currently stored in RequestEvent metadata placeholder.
   idempotencyKey: z.string().trim().min(1).max(200).optional(),
 });
 
 export const updateRequestStatusSchema = z.object({
-  status: z.nativeEnum(RequestStatus),
+  status: RequestStatusEnum,
   actorId: z.string().uuid("actorId must be a UUID").optional(),
 });
 
@@ -33,8 +35,8 @@ export const requestIdSchema = z.object({
 });
 
 export const listRequestsSchema = z.object({
-  status: z.nativeEnum(RequestStatus).optional(),
-  priority: z.nativeEnum(RequestPriority).optional(),
+  status: RequestStatusEnum.optional(),
+  priority: RequestPriorityEnum.optional(),
   take: z.coerce.number().int().min(1).max(100).optional(),
   skip: z.coerce.number().int().min(0).max(10_000).optional(),
 });
@@ -45,5 +47,4 @@ export type AssignAgentInput = z.infer<typeof assignAgentSchema>;
 export type RequestIdInput = z.infer<typeof requestIdSchema>;
 export type ListRequestsInput = z.infer<typeof listRequestsSchema>;
 
-export const DEFAULT_AI_PROCESSING_STATUS = AIProcessingStatus.PENDING;
-
+export const DEFAULT_AI_PROCESSING_STATUS = "PENDING";

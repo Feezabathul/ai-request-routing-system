@@ -1,15 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { RequestsHeader } from '@/components/requests/RequestsHeader';
-import { SearchBar } from '@/components/requests/SearchBar';
 import { RequestsFilters } from '@/components/requests/RequestsFilters';
 import { Table } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle, FileSearch } from 'lucide-react';
+import { FileSearch } from 'lucide-react';
 import { getUserRole, UserRole } from '@/lib/role';
 import { getCurrentAgent } from '@/lib/agents';
 import { getCurrentUser, getRequestCreator } from '@/lib/current-user';
@@ -41,8 +38,6 @@ interface CurrentAgent {
 }
 
 export default function RequestsPage() {
-  const router = useRouter();
-  const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ status: '', priority: '', category: '', agent: '' });
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Request[]>([]);
@@ -84,8 +79,6 @@ export default function RequestsPage() {
     };
 
     loadRequests();
-    
-    // Optional polling for real-time feel if needed, but not strictly necessary.
   }, []);
 
   useEffect(() => {
@@ -112,15 +105,11 @@ export default function RequestsPage() {
   })();
 
   const filtered = visibleData.filter((r) => {
-    const matchesQuery =
-      r.title.toLowerCase().includes(query.toLowerCase()) ||
-      r.customerEmail.toLowerCase().includes(query.toLowerCase()) ||
-      r.category.toLowerCase().includes(query.toLowerCase());
     const matchesStatus = !filters.status || r.status === filters.status;
     const matchesPriority = !filters.priority || r.priority === filters.priority;
     const matchesCategory = !filters.category || r.category === filters.category;
     const matchesAgent = !filters.agent || r.assignedAgentId === filters.agent || r.assignedAgentName === filters.agent;
-    return matchesQuery && matchesStatus && matchesPriority && matchesCategory && matchesAgent;
+    return matchesStatus && matchesPriority && matchesCategory && matchesAgent;
   });
 
   const columns: Array<{ header: string; accessor: keyof Request | ((row: Request) => React.ReactNode); className?: string }> = [
@@ -201,12 +190,10 @@ export default function RequestsPage() {
       accessor: (row: Request) => new Date(row.createdAt).toLocaleDateString(),
     },
   ];
+
   return (
     <section className="max-w-7xl mx-auto p-4">
-      <RequestsHeader onCreate={() => router.push(`/${role?.toLowerCase()}/create-request`)} />
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-        <SearchBar query={query} onChange={setQuery} />
-      </div>
+      <RequestsHeader />
       <RequestsFilters filters={filters} setFilters={setFilters} />
 
       {loading ? (
@@ -219,18 +206,11 @@ export default function RequestsPage() {
               ? 'No requests assigned to you yet'
               : 'No requests found'}
           </p>
-          {role !== 'AGENT' && (
-            <Button onClick={() => router.push(`/${role?.toLowerCase()}/create-request`)} variant="primary" className="flex items-center gap-2">
-              <PlusCircle className="w-4 h-4" />
-              Create Request
-            </Button>
-          )}
         </div>
       ) : (
         <Table columns={columns} data={filtered} />
       )}
     </section>
   );
-
 }
 

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { RequestsHeader } from '@/components/requests/RequestsHeader';
-import { SearchBar } from '@/components/requests/SearchBar';
 import { RequestsFilters } from '@/components/requests/RequestsFilters';
 import { Table } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +38,6 @@ interface CurrentAgent {
 }
 
 export default function RequestsPage() {
-  const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ status: '', priority: '', category: '', agent: '' });
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Request[]>([]);
@@ -93,29 +91,27 @@ export default function RequestsPage() {
     return () => window.clearTimeout(loadSessionTimer);
   }, []);
 
+  const assignedData = data.filter((request) => request.status !== 'Resolved');
+
   const visibleData = (() => {
     // USER only sees their own created requests
     if (role === 'USER' && currentUser) {
-      return data.filter((request) => request.createdById === currentUser.id);
+      return assignedData.filter((request) => request.createdById === currentUser.id);
     }
     // AGENT only sees their assigned requests
     if (role === 'AGENT' && currentAgent) {
-      return data.filter((request) => request.assignedAgentId === currentAgent.id);
+      return assignedData.filter((request) => request.assignedAgentId === currentAgent.id);
     }
     // ADMIN and MANAGER see all requests
-    return data;
+    return assignedData;
   })();
 
   const filtered = visibleData.filter((r) => {
-    const matchesQuery =
-      r.title.toLowerCase().includes(query.toLowerCase()) ||
-      r.customerEmail.toLowerCase().includes(query.toLowerCase()) ||
-      r.category.toLowerCase().includes(query.toLowerCase());
     const matchesStatus = !filters.status || r.status === filters.status;
     const matchesPriority = !filters.priority || r.priority === filters.priority;
     const matchesCategory = !filters.category || r.category === filters.category;
     const matchesAgent = !filters.agent || r.assignedAgentId === filters.agent || r.assignedAgentName === filters.agent;
-    return matchesQuery && matchesStatus && matchesPriority && matchesCategory && matchesAgent;
+    return matchesStatus && matchesPriority && matchesCategory && matchesAgent;
   });
 
   const columns: Array<{ header: string; accessor: keyof Request | ((row: Request) => React.ReactNode); className?: string }> = [
@@ -198,11 +194,8 @@ export default function RequestsPage() {
   ];
   return (
     <section className="max-w-7xl mx-auto p-4">
-      <RequestsHeader />
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-        <SearchBar query={query} onChange={setQuery} />
-      </div>
-      <RequestsFilters filters={filters} setFilters={setFilters} />
+      <RequestsHeader title="Assigned Requests" />
+      <RequestsFilters filters={filters} setFilters={setFilters} showAllCategories={false} />
 
       {loading ? (
         <Table columns={columns} data={[]} loading={true} />

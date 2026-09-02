@@ -187,6 +187,7 @@ model RequestEvent {
 
 model AgentInvitation {
   id        String           @id @default(uuid()) @db.Uuid
+  name      String?
   email     String           @unique
   token     String           @unique
   status    InvitationStatus @default(INVITED)

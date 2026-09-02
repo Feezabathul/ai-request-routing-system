@@ -9,6 +9,7 @@ export interface CurrentUser {
   role: UserRole;
   department?: string | null;
   status?: string | null;
+  avatar?: string;
 }
 
 export function setCurrentUser(user: CurrentUser): void {

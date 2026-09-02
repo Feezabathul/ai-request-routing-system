@@ -27,23 +27,36 @@ function AgentSetupForm() {
 
   useEffect(() => {
     if (!token) {
-      setError('No invitation token provided');
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        setError('No invitation token provided');
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
-    // Verify token
+    let isMounted = true;
+
     fetch(`/api/agents/setup?token=${token}`)
       .then(res => res.json().then(data => ({ status: res.status, data })))
       .then(({ status, data }) => {
+        if (!isMounted) return;
         if (status !== 200) {
           setError(data.error || 'Invalid or expired invitation');
         } else {
           setEmail(data.email);
+          setFormData((current) => ({ ...current, name: data.name || current.name }));
         }
       })
-      .catch(() => setError('Network error'))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (isMounted) setError('Network error');
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   const validateForm = () => {
@@ -90,7 +103,7 @@ function AgentSetupForm() {
         router.push('/login');
       }, 3000);
       
-    } catch (err) {
+    } catch {
       setError('Network error during setup');
       setIsSubmitting(false);
     }
@@ -145,13 +158,13 @@ function AgentSetupForm() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-indigo-100/40 blur-3xl" />
-        <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-violet-100/40 blur-3xl" />
+        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-100/40 blur-3xl" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-violet-100/40 blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-200">
             <Zap className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold text-slate-800 tracking-tight">AI Router</span>
@@ -230,7 +243,7 @@ function AgentSetupForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-medium rounded-xl shadow-md shadow-indigo-200 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 mt-2"
+              className="w-full py-3 px-4 bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-medium rounded-xl shadow-md shadow-indigo-200 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 mt-2"
             >
               {isSubmitting ? 'Creating account...' : 'Complete Setup'}
             </button>

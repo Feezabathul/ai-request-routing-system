@@ -55,14 +55,14 @@ export function Table<T extends Record<string, any>>({
                 </tr>
               ))
             : data.map((row, idx) => (
-                <tr key={idx} className="border-t">
+                <tr key={idx} className="border-t border-gray-200 hover:bg-gray-50">
                   {columns.map((col, i) => {
                     const content =
                       typeof col.accessor === 'function'
                         ? col.accessor(row)
                         : (row[col.accessor as keyof T]);
                     return (
-                      <td key={i} className="px-4 py-2 text-sm text-gray-800">
+                      <td key={i} className="px-4 py-3 text-sm text-gray-800">
                         {content as React.ReactNode}
                       </td>
                     );

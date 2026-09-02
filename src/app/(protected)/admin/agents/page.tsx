@@ -57,6 +57,7 @@ export default function AgentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteError, setInviteError] = useState('');
   const [isInviting, setIsInviting] = useState(false);
@@ -103,7 +104,7 @@ export default function AgentsPage() {
       const res = await fetch('/api/agents/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail.trim() }),
+        body: JSON.stringify({ name: inviteName.trim(), email: inviteEmail.trim() }),
       });
 
       const data = await (res.json() as Promise<{ success?: boolean; error?: string, setupUrl?: string }>);
@@ -119,6 +120,7 @@ export default function AgentsPage() {
         setGeneratedInviteLink(data.setupUrl);
       } else {
         setShowInviteModal(false);
+        setInviteName('');
         setInviteEmail('');
       }
       fetchAgentsAndInvites();
@@ -141,6 +143,7 @@ export default function AgentsPage() {
 
   const closeInviteModal = () => {
     setShowInviteModal(false);
+    setInviteName('');
     setInviteEmail('');
     setInviteError('');
     setGeneratedInviteLink('');
@@ -371,6 +374,17 @@ export default function AgentsPage() {
                     Send an invitation link for a new agent to set up their account.
                   </p>
                   <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Agent name</label>
+                      <input
+                        type="text"
+                        placeholder="Agent name"
+                        value={inviteName}
+                        onChange={(e) => setInviteName(e.target.value)}
+                        disabled={isInviting}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-colors"
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                       <input

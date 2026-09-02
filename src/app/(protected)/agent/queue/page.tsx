@@ -193,7 +193,7 @@ export default function RequestsPage() {
 
   return (
     <section className="max-w-7xl mx-auto p-4">
-      <RequestsHeader />
+      <RequestsHeader title="Agent Queue" />
       <RequestsFilters filters={filters} setFilters={setFilters} />
 
       {loading ? (

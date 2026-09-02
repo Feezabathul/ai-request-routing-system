@@ -163,10 +163,6 @@ export class RequestRepository {
         }),
       ]);
 
-    console.log('[dashboard] totalRequests=', totalRequests);
-    console.log('[dashboard] newRequests=', newRequests);
-    console.log('[dashboard] inProgressRequests=', inProgressRequests);
-    console.log('[dashboard] resolvedRequests=', resolvedRequests);
 
     // Agent workload uses $queryRaw (groupBy not supported with driver adapters).
     // Isolated in its own try-catch so a raw-SQL failure can never zero the counts above.

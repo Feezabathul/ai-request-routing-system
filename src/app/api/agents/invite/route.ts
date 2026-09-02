@@ -5,10 +5,10 @@ import { sendInvitationEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const { name, email } = await request.json();
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    if (!name?.trim() || !email?.trim()) {
+      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
     }
 
     // Generate unique token
@@ -21,7 +21,8 @@ export async function POST(request: Request) {
     // Create the invitation
     const invitation = await prisma.agentInvitation.create({
       data: {
-        email,
+        name: name.trim(),
+        email: email.trim(),
         token,
         status: 'INVITED',
         expiresAt,

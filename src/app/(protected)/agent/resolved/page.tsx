@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { RequestsHeader } from '@/components/requests/RequestsHeader';
-import { SearchBar } from '@/components/requests/SearchBar';
 import { RequestsFilters } from '@/components/requests/RequestsFilters';
 import { Table } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +29,7 @@ interface Request {
   assignedAgentId?: string;
   assignedAgentName?: string;
   createdAt: string;
+  resolvedAt?: string | null;
 }
 
 interface CurrentAgent {
@@ -39,7 +39,6 @@ interface CurrentAgent {
 }
 
 export default function RequestsPage() {
-  const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ status: '', priority: '', category: '', agent: '' });
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Request[]>([]);
@@ -70,6 +69,7 @@ export default function RequestsPage() {
             assignedAgentId: req.assignedToId,
             assignedAgentName: req.assignedTo?.name,
             createdAt: req.createdAt,
+            resolvedAt: req.resolvedAt,
           }));
           setData(mappedRequests);
         }
@@ -93,29 +93,27 @@ export default function RequestsPage() {
     return () => window.clearTimeout(loadSessionTimer);
   }, []);
 
+  const resolvedData = data.filter((request) => request.status === 'Resolved');
+
   const visibleData = (() => {
     // USER only sees their own created requests
     if (role === 'USER' && currentUser) {
-      return data.filter((request) => request.createdById === currentUser.id);
+      return resolvedData.filter((request) => request.createdById === currentUser.id);
     }
     // AGENT only sees their assigned requests
     if (role === 'AGENT' && currentAgent) {
-      return data.filter((request) => request.assignedAgentId === currentAgent.id);
+      return resolvedData.filter((request) => request.assignedAgentId === currentAgent.id);
     }
     // ADMIN and MANAGER see all requests
-    return data;
+    return resolvedData;
   })();
 
   const filtered = visibleData.filter((r) => {
-    const matchesQuery =
-      r.title.toLowerCase().includes(query.toLowerCase()) ||
-      r.customerEmail.toLowerCase().includes(query.toLowerCase()) ||
-      r.category.toLowerCase().includes(query.toLowerCase());
     const matchesStatus = !filters.status || r.status === filters.status;
     const matchesPriority = !filters.priority || r.priority === filters.priority;
     const matchesCategory = !filters.category || r.category === filters.category;
     const matchesAgent = !filters.agent || r.assignedAgentId === filters.agent || r.assignedAgentName === filters.agent;
-    return matchesQuery && matchesStatus && matchesPriority && matchesCategory && matchesAgent;
+    return matchesStatus && matchesPriority && matchesCategory && matchesAgent;
   });
 
   const columns: Array<{ header: string; accessor: keyof Request | ((row: Request) => React.ReactNode); className?: string }> = [
@@ -190,19 +188,22 @@ export default function RequestsPage() {
         </Badge>
       ),
     },
-    { header: 'Agent', accessor: (row: Request) => row.assignedAgentName ?? row.assignedAgent ?? '-' },
     {
       header: 'Created',
       accessor: (row: Request) => new Date(row.createdAt).toLocaleDateString(),
     },
+    {
+      header: 'Resolved At',
+      accessor: (row: Request) => row.resolvedAt ? new Date(row.resolvedAt).toLocaleString() : '-',
+    },
   ];
   return (
     <section className="max-w-7xl mx-auto p-4">
-      <RequestsHeader />
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-        <SearchBar query={query} onChange={setQuery} />
-      </div>
-      <RequestsFilters filters={filters} setFilters={setFilters} />
+      <RequestsHeader
+        title="Resolved Requests"
+        description="View requests you have successfully resolved."
+      />
+      <RequestsFilters filters={filters} setFilters={setFilters} showAllCategories={false} />
 
       {loading ? (
         <Table columns={columns} data={[]} loading={true} />

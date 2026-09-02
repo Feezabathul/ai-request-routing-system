@@ -93,5 +93,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Invitation expired or already used', email: invitation.email, status: invitation.status }, { status: 400 });
   }
 
-  return NextResponse.json({ email: invitation.email, status: invitation.status });
+  return NextResponse.json({ email: invitation.email, name: invitation.name ?? '', status: invitation.status });
 }

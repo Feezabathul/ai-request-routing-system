@@ -9,9 +9,10 @@ export interface FiltersState {
 interface RequestsFiltersProps {
   filters: FiltersState;
   setFilters: React.Dispatch<React.SetStateAction<FiltersState>>;
+  showAllCategories?: boolean;
 }
 
-export const RequestsFilters: React.FC<RequestsFiltersProps> = ({ filters, setFilters }) => {
+export const RequestsFilters: React.FC<RequestsFiltersProps> = ({ filters, setFilters, showAllCategories = true }) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
@@ -54,7 +55,7 @@ export const RequestsFilters: React.FC<RequestsFiltersProps> = ({ filters, setFi
         onChange={handleChange}
         className="rounded border-gray-300 p-2"
       >
-        <option value="">All Categories</option>
+        {showAllCategories && <option value="">All Categories</option>}
         <option value="Technical Support">Technical Support</option>
         <option value="Billing">Billing</option>
         <option value="Account Management">Account Management</option>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,6 @@ import { getCurrentUser, type CurrentUser } from '@/lib/current-user';
 import { formatAiCategoryLabel } from '@/lib/departments';
 
 export default function RequestDetailPage() {
-  const router = useRouter();
   const { id } = useParams<{ id: string }>();
   
   const [request, setRequest] = useState<any>(null);
@@ -24,10 +23,6 @@ export default function RequestDetailPage() {
   const [selectedAgentId, setSelectedAgentId] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
   
-  const [resolutionNote, setResolutionNote] = useState('');
-  const [isResolving, setIsResolving] = useState(false);
-  const [showResolveModal, setShowResolveModal] = useState(false);
-
   const fetchRequest = async () => {
     try {
       const currentUser = getCurrentUser();
@@ -76,26 +71,6 @@ export default function RequestDetailPage() {
       }
     } finally {
       setIsAssigning(false);
-    }
-  };
-
-  const handleResolve = async () => {
-    if (!resolutionNote.trim()) return;
-    setIsResolving(true);
-    try {
-      const res = await fetch(`/api/requests/${id}/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resolutionNote })
-      });
-      if (res.ok) {
-        setShowResolveModal(false);
-        fetchRequest(); // Refresh
-      } else {
-        alert('Failed to resolve request');
-      }
-    } finally {
-      setIsResolving(false);
     }
   };
 
@@ -157,12 +132,6 @@ export default function RequestDetailPage() {
               </div>
             )}
             
-            {user?.role === 'AGENT' && request.assignedToId === user.id && request.status !== 'RESOLVED' && (
-              <Button onClick={() => setShowResolveModal(true)} className="w-full bg-emerald-600 hover:bg-emerald-700">
-                <CheckCircle className="h-4 w-4 mr-2" /> Mark as Resolved
-              </Button>
-            )}
-
             {request.status === 'RESOLVED' && (
               <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-800">
                 <h4 className="font-semibold flex items-center gap-2 mb-2">
@@ -176,28 +145,6 @@ export default function RequestDetailPage() {
         </div>
       </div>
 
-      {showResolveModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold mb-2">Resolve Request</h3>
-            <p className="text-sm text-slate-500 mb-4">Provide notes on how this was resolved. These will be sent to the customer.</p>
-            
-            <textarea
-              value={resolutionNote}
-              onChange={e => setResolutionNote(e.target.value)}
-              placeholder="Resolution notes..."
-              className="w-full h-32 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 mb-4 resize-none"
-            />
-            
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowResolveModal(false)}>Cancel</Button>
-              <Button onClick={handleResolve} disabled={isResolving || !resolutionNote.trim()} className="bg-emerald-600 hover:bg-emerald-700">
-                Confirm Resolution
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

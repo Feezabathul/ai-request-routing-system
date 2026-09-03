@@ -120,7 +120,7 @@ export default function RequestsPage() {
     {
       header: 'Title',
       accessor: (row: Request) => (
-        <Link href={`/dashboard/requests/${row.id}`} className="text-indigo-600 hover:underline">
+        <Link href={`/agent/request/${row.id}`} className="text-indigo-600 hover:underline">
           {row.title}
         </Link>
       ),

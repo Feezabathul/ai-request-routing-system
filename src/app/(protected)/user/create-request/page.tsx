@@ -82,7 +82,7 @@ export default function CreateRequestPage() {
 
       setTimeout(() => {
         setLoading(false);
-        router.push("/dashboard/requests");
+        router.push("/user/requests?submitted=success");
       }, 1500);
     } catch (err: any) {
       setError(err.message || "An error occurred while submitting.");

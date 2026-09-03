@@ -22,6 +22,8 @@ export default function RequestDetailPage() {
   
   const [selectedAgentId, setSelectedAgentId] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
+  const [resolutionNote, setResolutionNote] = useState('');
+  const [isResolving, setIsResolving] = useState(false);
   
   const fetchRequest = async () => {
     try {
@@ -71,6 +73,32 @@ export default function RequestDetailPage() {
       }
     } finally {
       setIsAssigning(false);
+    }
+  };
+
+  const handleResolve = async () => {
+    if (!resolutionNote.trim()) {
+      alert('Please add a resolution note before resolving this request.');
+      return;
+    }
+
+    setIsResolving(true);
+    try {
+      const res = await fetch(`/api/requests/${id}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolutionNote: resolutionNote.trim() }),
+      });
+
+      if (res.ok) {
+        await fetchRequest();
+        setResolutionNote('');
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error || 'Failed to resolve request');
+      }
+    } finally {
+      setIsResolving(false);
     }
   };
 
@@ -139,6 +167,30 @@ export default function RequestDetailPage() {
                 </h4>
                 <p className="text-sm italic">"{request.resolutionNote}"</p>
                 <p className="text-xs mt-2 text-emerald-600">Resolved at: {new Date(request.resolvedAt).toLocaleString()}</p>
+              </div>
+            )}
+
+            {user?.role === 'AGENT' && request.assignedToId === user.id && request.status !== 'RESOLVED' && (
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <label htmlFor="resolution-note" className="mb-2 block text-sm font-medium text-slate-700">
+                  Resolution note
+                </label>
+                <textarea
+                  id="resolution-note"
+                  value={resolutionNote}
+                  onChange={(event) => setResolutionNote(event.target.value)}
+                  rows={3}
+                  placeholder="Describe how this request was resolved"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  disabled={isResolving}
+                />
+                <Button
+                  onClick={handleResolve}
+                  disabled={isResolving || !resolutionNote.trim()}
+                  className="mt-3 bg-emerald-600 text-white hover:bg-emerald-700"
+                >
+                  {isResolving ? 'Resolving...' : 'Resolve Request'}
+                </Button>
               </div>
             )}
           </Card>

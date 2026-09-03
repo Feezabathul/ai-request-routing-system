@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { RequestsHeader } from '@/components/requests/RequestsHeader';
 import { SearchBar } from '@/components/requests/SearchBar';
 import { RequestsFilters } from '@/components/requests/RequestsFilters';
@@ -42,6 +42,7 @@ interface CurrentAgent {
 
 export default function RequestsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ status: '', priority: '', category: '', agent: '' });
   const [loading, setLoading] = useState(true);
@@ -49,6 +50,13 @@ export default function RequestsPage() {
   const [role, setRole] = useState<UserRole | null>(null);
   const [currentAgent, setCurrentAgent] = useState<CurrentAgent | null>(null);
   const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCurrentUser>>(null);
+  const submittedMessage = searchParams.get('submitted') === 'success';
+
+  useEffect(() => {
+    if (!submittedMessage) return;
+    const timeout = window.setTimeout(() => router.replace('/user/requests'), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [router, submittedMessage]);
 
   // Load requests from API
   useEffect(() => {
@@ -204,6 +212,11 @@ export default function RequestsPage() {
   return (
     <section className="max-w-7xl mx-auto p-4">
       <RequestsHeader onCreate={() => router.push('/user/create-request')} />
+      {submittedMessage && (
+        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+          Request submitted successfully.
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
         <SearchBar query={query} onChange={setQuery} />
       </div>

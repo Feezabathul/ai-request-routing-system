@@ -27,7 +27,7 @@ export function Table<T extends Record<string, any>>({
 }: TableProps<T>) {
   return (
     <div className={twMerge(clsx('overflow-x-auto rounded-lg border border-gray-200', className))}>
-      <table className="min-w-full bg-white">
+      <table className="min-w-[640px] bg-white">
         <thead className="bg-gray-100">
           <tr>
             {columns.map((col, i) => (

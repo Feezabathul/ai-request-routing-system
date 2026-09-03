@@ -24,7 +24,7 @@ function Unauthorized({ role }: { role: UserRole }) {
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-2xl rounded-[2rem] border border-gray-200 bg-white px-8 py-12 shadow-xl">
+      <div className="w-full max-w-2xl rounded-[2rem] border border-gray-200 bg-white px-4 py-8 shadow-xl sm:px-8 sm:py-12">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-600">
           <Shield className="h-8 w-8" />
         </div>

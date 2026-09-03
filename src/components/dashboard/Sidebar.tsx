@@ -115,8 +115,8 @@ export const Sidebar: React.FC<{ role?: UserRole }> = ({ role }) => {
   return (
     <aside
       className={clsx(
-        "flex flex-col min-h-screen bg-white border-r border-slate-200 shadow-sm transition-all duration-300 relative z-30",
-        sidebarOpen ? "w-[260px]" : "w-[70px]"
+        "fixed inset-y-0 left-0 flex flex-col min-h-screen bg-white border-r border-slate-200 shadow-sm transition-all duration-300 z-30 sm:relative",
+        sidebarOpen ? "w-[min(260px,calc(100vw-1rem))] z-50" : "w-14 sm:w-[70px]"
       )}
     >
       {/* Header */}

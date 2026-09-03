@@ -74,7 +74,7 @@ export const AgentQueue: React.FC<AgentQueueProps> = ({ user }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+      <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white">
         {loading ? (
           <div className="p-8 text-center text-slate-500">Loading queue...</div>
         ) : requests.length === 0 ? (
@@ -84,7 +84,7 @@ export const AgentQueue: React.FC<AgentQueueProps> = ({ user }) => {
             <p className="text-sm text-slate-500 mt-1">You have no pending requests assigned to you.</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[680px] text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
               <tr>
                 <th className="px-6 py-4 font-medium">Subject</th>

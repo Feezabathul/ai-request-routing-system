@@ -185,7 +185,7 @@ export default function RequestDetailPage() {
 
       {showResolveModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4 sm:p-6">
             <h3 className="text-lg font-bold mb-2">Resolve Request</h3>
             <p className="text-sm text-slate-500 mb-4">Provide notes on how this was resolved. These will be sent to the customer.</p>
             
@@ -213,7 +213,7 @@ export default function RequestDetailPage() {
         
         return (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4 sm:p-6 max-h-[80vh] flex flex-col">
               <h3 className="text-lg font-bold mb-2">Assign Agent</h3>
               <p className="text-sm text-slate-500 mb-4">
                 Category: <strong className="text-indigo-600">{requestCategoryLabel}</strong>

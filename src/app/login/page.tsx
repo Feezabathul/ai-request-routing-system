@@ -15,7 +15,7 @@ type RoleHint = '' | 'ADMIN' | 'AGENT' | 'USER';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState<string>("admin@example.com");
+  const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [roleHint, setRoleHint] = useState<RoleHint>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -96,7 +96,7 @@ export default function LoginPage() {
   ];
 
   return (
-    <section className={`${inter.className} min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100`}>
+    <section className={`${inter.className} min-h-screen min-w-0 flex flex-col lg:flex-row bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100`}>
       {/* Left side – info panel */}
       <div className="hidden lg:flex flex-1 flex-col justify-center items-start px-16 py-12 bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 relative overflow-hidden">
         {/* Decorative shapes */}
@@ -132,8 +132,8 @@ export default function LoginPage() {
       </div>
 
       {/* Right side – login card */}
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-md bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-8 space-y-6">
+      <div className="flex min-w-0 flex-1 items-center justify-center p-4 sm:p-8 lg:p-10">
+        <div className="w-full max-w-md min-w-0 bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-5 sm:p-8 space-y-6">
           {/* Mobile logo */}
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md shadow-indigo-200">
@@ -142,8 +142,8 @@ export default function LoginPage() {
             <span className="text-lg font-bold text-slate-800">AI Router</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-slate-800 mb-1">Welcome back</h2>
-          <p className="text-slate-500 mb-8">Sign in to your account to continue</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-1">Welcome back</h2>
+          <p className="text-sm sm:text-base text-slate-500 mb-6 sm:mb-8">Sign in to your account to continue</p>
 
           {error && (
             <div className="mb-6 flex items-start gap-3 px-4 py-3.5 bg-red-50 border border-red-100 rounded-xl" role="alert">
@@ -191,6 +191,8 @@ export default function LoginPage() {
                     id="email"
                     name="email"
                     type="email"
+                    placeholder="Enter your email address"
+                    autoComplete="off"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -207,6 +209,7 @@ export default function LoginPage() {
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
+                      autoComplete="off"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -247,7 +250,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 disabled:opacity-60 shadow-md shadow-teal-200/50 hover:shadow-lg hover:shadow-teal-300/50"
+                className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 disabled:opacity-60 shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
